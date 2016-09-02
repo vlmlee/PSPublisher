@@ -200,7 +200,7 @@ PSPublisher.prototype.watch = function() {
             if (arrayEquals(fileListings, trackedKeys)) {
                 logger.log('info', "Files are in sync. Will be listening for changes.");
             } else {
-                if (fileListings) {
+                if (!fileListings) {
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
                     logger.log('info', "Files in " + dir + " are not in sync.");
