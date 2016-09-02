@@ -110,13 +110,12 @@ Coming soon.
 
 A lot of further work needs to be done. Validating schemas, more support for multiple schemas and other files are in consideration. Some slight optimizations could also be done.
 
-### Author: Michael Lee{http://www.corollari.com}
-
-### References
+### Author: Michael Lee[http://www.corollari.com][4]
 
 [1]: https://www.youtube.com/watch?v=csyL9EC0S0c
 [2]: https://github.com/paulmillr/chokidar
 [3]: https://github.com/Automattic/mongoose
+[4]: http://www.corollari.com
 
 ### License: MIT License
 
