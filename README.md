@@ -41,30 +41,30 @@ So why not automate the process? And so here we are.
 
 PSPublisher is built on top of [chokidar][2] and [mongoose][3]. Both are mature and robust modules that made this project possible. Both are built with asynchronicity in mind.
 
-For now, you will want to use PSPublisher like this if it's in the same path:
+For now, we will want to use PSPublisher like this if it's in the same path:
 
 ```js
 var publisher = require('./index');
 ```
 
-Later, you'll be able to require it just like any other node module.
+Later, we'll be able to require it just like any other node module.
 
 ```js
 var publisher = require('PSPublisher');
 ```
 
-To use it, you define a path or directory that we want it to watch. We then also tell it what database to send our documents to.
+To use it, we define a path or directory that we want it to watch. We then also tell it what database to send our documents to.
 
 ```js
 publisher(path);
 publisher.connect('mongodb://localhost/myapp');
 
-\\ or chained:
+// or chained:
 
 publisher(path).connect('mongodb://localhost/myapp');
 ```
 
-After doing so, we can define a model to structure our documents. With this module, you want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. PSPublisher currently has no support for subdocuments. 
+After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. you can define the schema to be anything you like, as long as your documents match that schema. PSPublisher currently has no support for subdocuments. 
 
 ```js
 publisher.models([{
@@ -84,6 +84,8 @@ Then you run the script with:
 publisher.start();
 
 ```
+
+Then, just set up your mongo database, move your files into that directory, and voila! It shows up in your database.
 
 ### Recommendations
 

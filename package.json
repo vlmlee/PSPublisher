@@ -24,7 +24,7 @@
     "mongoose": "^4.5.10",
     "winston": "^2.2.0",
     "junk": "^2.0.0",
-    "jsonschema": "^1.1.0"
+    "json-schema": "^0.2.2"
   },
   "devDependencies": {
     "mocha": "^2.3.3"

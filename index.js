@@ -3,7 +3,6 @@ var fs = require('fs'),
     chokidar = require('chokidar'),
     winston = require('winston'),
     mongoose = require('mongoose'),
-    async = require('async'),
     junk = require('junk'),
     path = require('path'),
     validate = require('json-schema').validate,
@@ -495,4 +494,7 @@ function arrayEquals(arr1, arr2) {
     ---------------
 */
 
-module.exports = PSPublisher;
+module.exports = { 
+    PSPublisher: PSPublisher,
+    logger: logger
+};
