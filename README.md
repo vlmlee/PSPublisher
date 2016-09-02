@@ -94,13 +94,13 @@ For the time being, only json files are supported. Make sure your schemas that h
 To have the script automatically exit when an exception is thrown, you will want to change `exitOnError` on the logger to true:
 
 ```js
-	publisher.logger({exitOnError: true});
+publisher.logger({exitOnError: true});
 ```
 
 
 ### Protect trackedFiles.json
 
-Don't modify this file.
+Don't modify this file. In fact, I need to make it restricted to the users...
 
 ### Tests
 
