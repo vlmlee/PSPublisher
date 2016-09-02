@@ -100,7 +100,7 @@ publisher.logger({exitOnError: true});
 
 ### Protect trackedFiles.json
 
-Don't modify this file. In fact, I need to make it restricted to the users...
+Don't modify this file.
 
 ### Tests
 
