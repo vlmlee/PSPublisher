@@ -1,0 +1,33 @@
+{
+  "name": "PSPublisher",
+  "version": "1.0.0",
+  "author": "Michael Lee <mlee@vellichorlabs.com>",
+  "description": "A module for automatic, asynchronous CRUD operations on a Mongo database.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vlmlee/PSPublisher.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -R spec ./test/test.js && mocha -R spec ./test/database.js"
+  },
+  "keywords": [
+    "PSPublisher",
+    "automated",
+    "crud",
+    "mongodb"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "chokidar": "^1.6.0",
+    "mongodb": "^2.0.27",
+    "mongoose": "^4.5.10",
+    "winston": "^2.2.0",
+    "junk": "^2.0.0",
+    "jsonschema": "^1.1.0"
+  },
+  "devDependencies": {
+    "mocha": "^2.3.3"
+  },
+  "engines": ">=0.8"
+}
