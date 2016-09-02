@@ -89,7 +89,7 @@ Then, just set up your mongo database, move your files into that directory, and 
 
 ### Recommendations
 
-For the time being, only json files are supported. Make sure your schemas have important requires **required**. Also, as of right, you can only use *one* schema for *one* instance of PSPublisher. 
+For the time being, only json files are supported. Make sure your schemas that have important requirements uses **required**. Also, as of right now, you can only use *one* schema for *one* instance of PSPublisher. 
 
 To have the script automatically exit when an exception is thrown, you will want to change `exitOnError` on the logger to true:
 
