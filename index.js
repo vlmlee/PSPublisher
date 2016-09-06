@@ -261,7 +261,6 @@ function syncFiles(listing, tracked) {
 }
 
 function insertFile(file) {
-    var file = file;
     fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
         if (err) {
             logger.log('error', "Was not able to read the file.");
@@ -285,7 +284,6 @@ function insertFile(file) {
 }
 
 function updateFile(file) {
-    var file = file;
     fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
         if (err) {
             logger.log('error', "Was not able to update " + file + ".");
@@ -323,7 +321,6 @@ function updateFile(file) {
 }
 
 function removeFile(file) {
-    var file = file;
     fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, content) {
         if (err) {
             logger.log('error', "Was not able to read trackedFiles.json.");
