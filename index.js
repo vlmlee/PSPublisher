@@ -104,13 +104,7 @@ PSPublisher.prototype.connect = function(uri) {
                 'title': title,
                 'body': body
             }
-        }, {
-            name: 'Comments',
-            schema: {
-                'name': name,
-                'comment': comment
-            }
-        ]);
+        }]);
 
     Currently does not have support for subdocuments. 
 */
