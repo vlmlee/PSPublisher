@@ -1,7 +1,18 @@
 'use strict';
 
-var assert = require('assert'),
-	mocha = require('mocha');
+var expect = require('chai').expect;
+
+describe("", () => {
+	it("", () => {
+		expect().to.equal("");
+	});
+});
+
+describe("", () => {
+	it("", () => {
+		expect().to.equal("");
+	});
+});
 
 /* check if the number of files being watched by getWatched is the same as the number of files in the directory
 */

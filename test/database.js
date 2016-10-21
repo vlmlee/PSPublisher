@@ -1,7 +1,6 @@
 'use strict';
 
-var assert = require('assert').
-	mocha = require('mocha'),
+var expect = require('chai').expect,
 	mongo = require('mongodb');
 
 /* checks that database connection is successful
