@@ -2,6 +2,10 @@
 
 PSPublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
 
+## !!! WARNING !!!
+
+Not yet compatible with ES2016.
+
 ### Installation
 
 You can clone this repo with `git clone https://github.com/vlmlee/PSPublisher.git` and then run `npm install` from inside the cloned directory to install the dependencies.
@@ -32,9 +36,9 @@ PSPublisher/
 
 ### Motivation
 
-This module was created for personal use on a blog. I thought it was unneccessary to have to write forms for your *own* website when we had all these powerful tools that could handle these file operations for us. A web application is ["just a wrapper around a database"][1] afterall. 
+This module was created for personal use on a blog. I thought it was unneccessary to have to write forms for your *own* website when we had all these powerful tools that could handle those file operations for us. A web application is ["just a wrapper around a database"][1] afterall. 
 
-So why not automate the process? And so here we are.
+So why not automate the process? And so we did.
 
 ### Usage
 
@@ -63,7 +67,7 @@ publisher.connect('mongodb://localhost/myapp');
 publisher(path).connect('mongodb://localhost/myapp');
 ```
 
-After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. you can define the schema to be anything you like, as long as your documents match that schema. PSPublisher currently has no support for subdocuments. 
+After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. PSPublisher currently has no support for subdocuments. 
 
 ```js
 publisher.models([{
@@ -88,12 +92,12 @@ Then, just set up your mongo database, move your files into that directory, and 
 
 ### Recommendations
 
-For the time being, only json files are supported. Make sure your schemas have important requires **required**.
+For the time being, only json files are supported. Make sure your schemas that have important requirements uses **required**. Also, as of right now, you can only use *one* schema for *one* instance of PSPublisher. 
 
 To have the script automatically exit when an exception is thrown, you will want to change `exitOnError` on the logger to true:
 
 ```js
-	publisher.logger({exitOnError: true});
+publisher.logger({exitOnError: true});
 ```
 
 
@@ -109,13 +113,12 @@ Coming soon.
 
 A lot of further work needs to be done. Validating schemas, more support for multiple schemas and other files are in consideration. Some slight optimizations could also be done.
 
-### Author: Michael Lee{http://www.corollari.com}
-
-### References
+### Author: Michael Lee [http://www.corollari.com][4]
 
 [1]: https://www.youtube.com/watch?v=csyL9EC0S0c
 [2]: https://github.com/paulmillr/chokidar
 [3]: https://github.com/Automattic/mongoose
+[4]: http://www.corollari.com
 
 ### License: MIT License
 

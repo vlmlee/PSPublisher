@@ -154,6 +154,7 @@ class PSPublisher {
                     trackedKeys = [];
                 }
 
+<<<<<<< HEAD
                 /*  
                     trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
                     We can also do:
@@ -167,6 +168,12 @@ class PSPublisher {
                 if (arrayEquals(fileListings, trackedKeys)) {
                     logger.log('info', "Files are in sync. Will be listening for changes.");
                 } else if (fileListings.length === 0) {
+=======
+            if (arrayEquals(fileListings, trackedKeys)) {
+                logger.log('info', "Files are in sync. Will be listening for changes.");
+            } else {
+                if (!fileListings) {
+>>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
                     logger.log('info', "Files in " + dir + " are not in sync.");
@@ -203,9 +210,17 @@ class PSPublisher {
         });
     }
 
+<<<<<<< HEAD
     exit() {
         process.exit();
     }
+=======
+function insertFile(file) {
+    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
+        if (err) {
+            logger.log('error', "Was not able to read the file.");
+        }
+>>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
 
     syncFiles(listing, tracked, dir) {
         logger.log('info', "Syncing files...");
@@ -275,7 +290,11 @@ class PSPublisher {
 */
 
 function updateFile(file) {
+<<<<<<< HEAD
     fs.readFile(dir + file, 'utf8', function(err, content) {
+=======
+    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
+>>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
         if (err) {
             logger.log('error', "Was not able to update " + file + ".");
         }
