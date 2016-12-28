@@ -9,7 +9,7 @@
   },
   "main": "index.js",
   "scripts": {
-    "test": "mocha -R spec ./test/test.js && mocha -R spec ./test/database.js"
+    "test": "mocha ./test/test.js"
   },
   "keywords": [
     "PSPublisher",
@@ -19,15 +19,15 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "chokidar": "^1.6.0",
+    "chai": "^3.5.0",
+    "chokidar": "^1.6.1",
+    "fs-extra": "1.0.0",
+    "json-schema": "^0.2.2",
+    "junk": "^2.0.0",
+    "mocha": "^3.1.2",
     "mongodb": "^2.0.27",
     "mongoose": "^4.5.10",
-    "winston": "^2.2.0",
-    "junk": "^2.0.0",
-    "json-schema": "^0.2.2"
+    "winston": "^2.2.0"
   },
-  "devDependencies": {
-    "mocha": "^2.3.3"
-  },
-  "engines": ">=0.8"
+  "devDependencies": {}
 }

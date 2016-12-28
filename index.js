@@ -1,5 +1,5 @@
 'use strict';
-var fs = require('fs'),
+const fs = require('fs'),
     chokidar = require('chokidar'),
     winston = require('winston'),
     mongoose = require('mongoose'),
@@ -29,7 +29,7 @@ var fs = require('fs'),
     or (generically) logger.log('%level', 'message').
 */
 
-var logger = new winston.Logger({
+const logger = new winston.Logger({
     transports: [
         new(winston.transports.Console)({
             levels: {
@@ -63,167 +63,209 @@ var logger = new winston.Logger({
 
 /*  
     -----------------------------
-        Main PSPublisher Class
+        Main PSPublisher Class  
     -----------------------------
-*/
-
-function PSPublisher(directory) {
-    this.directory = directory;
-}
-
-PSPublisher.prototype.start = function() {
-    logger.log('info', "PSPublisher is starting...");
-    this.watch();
-}
-
-PSPublisher.prototype.connect = function(uri) {
-    mongoose.connect(uri);
-
-    // Confirms successful database connection
-    mongoose.connection.once('connected', function(err) {
-        if (err) {
-            next(err);
-            logger.log('error', "Couldn't connect to " + uri + ".");
-        }
-        logger.log('info', "Connected to " + uri);
-    });
-}
-
-/*  
-    ----------------------------------------------------------------------------
-        Registers Schemas in order to interface with Database using Mongoose
-    ----------------------------------------------------------------------------
-
-    We opt here to have user defined models passed in as an array.
+    
+    * Register Schemas in order to interface with Database using Mongoose.
+    * We opt here to have user defined models passed in as an array.
 
     Example:
 
-        PSPublisher.models([{
+        PSPublisher( { directory } , [{
             name: 'Posts',
             schema: {
                 'title': title,
                 'body': body
             }
-        }, {
-            name: 'Comments',
-            schema: {
-                'name': name,
-                'comment': comment
-            }
-        ]);
+        }]);
 
     Currently does not have support for subdocuments. 
 */
 
-// This is simply to make the name of the models available to this script.
-var modelNames = [];
-
-PSPublisher.prototype.models = function(models) {
-    if (!models) {
-        logger.log('error', "Invalid model. Please use proper formatting" + " or a valid schema.");
-    }
-
-    if (!Array.isArray(models)) {
-        logger.log('error', "Invalid model. Please use proper formatting" + " or a valid schema.");
-    }
-
-    for (var i = 0; i < models.length; i++) {
-        var Schema = new mongoose.Schema(models[i].schema, { timestamps: true });
-        mongoose.model(models[i].name, Schema);
-        modelNames.push(models[i].name);
-    }
-}
-
-/*  
-    --------------------
-        Main Watcher
-    --------------------
-*/
-
-PSPublisher.prototype.watch = function() {
-    var dir = this.directory;
-
-    // Trim off the end of the path since chokidar have absolute directory
-    // paths without a trailing backslash. This will protect users.
-    if (dir[dir.length - 1] === '/') {
-        dir = dir.substring(0, dir.length - 1);
-    }
-
-    // This will initialize the watcher, i.e. the main event emitter. We will
-    // be calling watch() on an instance of PSPublish to use it as a wrapper
-    // around chokidar with preconfigured events.
-    var watcher = chokidar.watch(dir, {
-        ignored: [
-            /[\/\\]\./,
-        ],
-        persistent: true
-    });
-
-    watcher.on('ready', function() {
-        logger.log('info', "Began watching " + dir);
-
-        /* 
-            Checks and sees what files are currently being watched. Chokidar also
-            tracks the directory itself so it's necessary to grab the property that 
-            only has the files. Our file listings is going to be our canonical record.
-            Our "tracked files" in trackedFiles.json holds the id of the documents in 
-            our database when they were first added. When the file is no longer in the 
-            directory, we will remove the document from the database and then untrack it.
-        */
-
-        var Watched = watcher.getWatched();
-        var fileListings = Watched[path.join(__dirname, dir)].sort();
-
-        // Reconcile the file listings with the record of tracked files. This 
-        // will be used to update the database on this script's startup.
-        fs.readFile('./lib/trackedFiles.json', 'utf8', function(err, data) {
-            if (err) {
-                logger.log('error', "An error occurred with trackedFiles file." + " Please resolve before continuing.");
+class PSPublisher {
+    constructor(directory, modelsArray) {
+        this.directory = directory;
+        this.models = (function(models) {
+            let modelNames = [];
+            if (!models) {
+                logger.log('error', "Invalid model. Please use proper formatting" + " or a valid schema.");
             }
-
-            if (data) {
-                var trackedFiles = JSON.parse(data),
-                    trackedKeys = Object.keys(trackedFiles).sort();
-            } else {
-                var trackedKeys = [];
+            if (!Array.isArray(models)) {
+                logger.log('error', "Invalid model. Please use proper formatting" + " or a valid schema.");
             }
+            for (let i = 0; i < models.length; i++) {
+                let Schema = new mongoose.Schema(models[i].schema, { timestamps: true });
+                mongoose.model(models[i].name, Schema);
+                modelNames.push(models[i].name);
+            }
+            return modelNames;
+        })(modelsArray);
+    }
 
-            /*  
-                trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
-                We can also do:
-                Object.keys(trackedFiles).forEach(function (key) {
-                    let value = trackedFiles[key];
-                    logger.log('info', value);
-                });
+    start() {
+        logger.log('info', "PSPublisher is starting...");
+
+        const dir = this.directory;
+        const models = this.models;
+
+        // Trim off the end of the path since chokidar have absolute directory
+        // paths without a trailing backslash. This will protect users.
+        if (dir[dir.length - 1] === '/') {
+            dir = dir.substring(0, dir.length - 1);
+        }
+
+        // This will initialize the watcher, i.e. the main event emitter. We will
+        // be calling watch() on an instance of PSPublish to use it as a wrapper
+        // around chokidar with preconfigured events.
+        const watcher = chokidar.watch(dir, {
+            ignored: [
+                /[\/\\]\./,
+            ],
+            persistent: true
+        });
+
+        watcher.on('ready', function() {
+            logger.log('info', "Began watching " + dir);
+            /* 
+                Checks and sees what files are currently being watched. Chokidar also
+                tracks the directory itself so it's necessary to grab the property that 
+                only has the files. Our file listings is going to be our canonical record.
+                Our "tracked files" in trackedFiles.json holds the id of the documents in 
+                our database when they were first added. When the file is no longer in the 
+                directory, we will remove the document from the database and then untrack it.
             */
+            const Watched = watcher.getWatched();
+            let fileListings = Watched[dir].sort();
 
-            if (arrayEquals(fileListings, trackedKeys)) {
-                logger.log('info', "Files are in sync. Will be listening for changes.");
-            } else {
-                if (fileListings) {
+            // Reconcile the file listings with the record of tracked files. This 
+            // will be used to update the database on this script's startup.
+            fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
+                let trackedFiles,
+                    trackedKeys;
+
+                if (err) {
+                    logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
+                }
+
+                if (data) {
+                    trackedFiles = JSON.parse(data),
+                        trackedKeys = Object.keys(trackedFiles).sort();
+                } else {
+                    trackedKeys = [];
+                }
+
+                /*  
+                    trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
+                    We can also do:
+                    Object.keys(trackedFiles).forEach(function (key) {
+                        let value = trackedFiles[key];
+                        logger.log('info', value);
+                    });
+                */
+                console.log(models);
+
+                if (arrayEquals(fileListings, trackedKeys)) {
+                    logger.log('info', "Files are in sync. Will be listening for changes.");
+                } else if (fileListings.length === 0) {
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
                     logger.log('info', "Files in " + dir + " are not in sync.");
-                    syncFiles(fileListings, trackedKeys);
+                    this.syncFiles(fileListings, trackedKeys, dir);
                 }
+            });
+        });
+
+        watcher.on('add', function(file) {
+            logger.log('info', file + " was added to " + dir + ".");
+            this.insertFile(file, dir);
+        });
+
+        watcher.on('change', function(file, stats) {
+            logger.log('info', file + " was modified at " + stats.mtime + ".");
+            this.updateFile(file, dir);
+        });
+
+        watcher.on('unlink', function(file) {
+            logger.log('info', file + " was removed from " + dir + ".");
+            this.removeFile(file, dir);
+        });
+    }
+
+    connect(uri) {
+        mongoose.connect(uri);
+        // Confirms successful database connection
+        mongoose.connection.once('connected', function(err) {
+            if (err) {
+                next(err);
+                logger.log('error', "Couldn't connect to " + uri + ".");
+            }
+            logger.log('info', "Connected to " + uri);
+        });
+    }
+
+    exit() {
+        process.exit();
+    }
+
+    syncFiles(listing, tracked, dir) {
+        logger.log('info', "Syncing files...");
+        if (listing.length > tracked.length) {
+            /*  
+                If the number of files in the directory is larger than the number
+                of files in trackedFiles.json, we have documents not yet added
+                to the database. We will also need to insert those files into 
+                trackedFiles after finding them. For each element in listing,
+                we test to see if it is in tracked. If it isn't, then we call
+                the insertFile method and insert it into our database. This search 
+                is costly (O(n^2)), but we can improve it later with a binary 
+                search since the arrays are already sorted.
+            */
+            listing.forEach(file => {
+                if (!(file in tracked)) {
+                    this.insertFile(file, dir);
+                }
+            });
+        } else if (listing.length < tracked.length) {
+            /*
+                If the number of files in the directory is less than the number 
+                of files in trackedFiles.json, we want to remove documents from
+                the database. We find each element in tracked and not in the
+                directory and remove it from the database and then 
+                trackedFiles.json.
+            */
+            tracked.forEach(file => {
+                if (!(file in listing)) {
+                    this.removeFile(file, dir);
+                }
+            });
+        }
+    }
+
+    insertFile(file, dir) {
+        fs.readFile(path.resolve(dir, file), 'utf8', function(err, content) {
+            if (err) {
+                console.log(err);
+                logger.log('error', "Was not able to read the file for some reason.");
+            }
+            console.log('hello');
+            // var model = mongoose.model(modelNames[0]);
+            console.log(this.models);
+            console.log(mongoose.modelNames());
+            if (model) {
+                var obj = JSON.parse(content);
+                model.create(obj, function(err, doc) {
+                    if (err) {
+                        logger.log('error', "An error occurred. " + file + " was not inserted into database.");
+                    }
+
+                    logger.log('info', file + " was successfully inserted. id: " + doc._id);
+                    addToTrackedFiles(file, doc._id);
+                });
+            } else {
+                logger.log('error', "Could not insert " + file + " into database.");
             }
         });
-    });
-
-    watcher.on('add', function(file) {
-        logger.log('info', file + " was added to " + dir + ".");
-        insertFile(file);
-    });
-
-    watcher.on('change', function(file, stats) {
-        logger.log('info', file + " was modified at " + stats.mtime + ".");
-        updateFile(file);
-    });
-
-    watcher.on('unlink', function(file) {
-        logger.log('info', file + " was removed from " + dir + ".");
-        removeFile(file);
-    });
+    }
 }
 
 /*  
@@ -232,67 +274,8 @@ PSPublisher.prototype.watch = function() {
     ----------------------------------
 */
 
-function syncFiles(listing, tracked) {
-    logger.log('info', "Syncing files...");
-    if (listing.length > tracked.length) {
-        /*  
-            If the number of files in the directory is larger than the number
-            of files in trackedFiles.json, we have documents not yet added
-            to the database. We will also need to insert those files into 
-            trackedFiles after finding them. For each element in listing,
-            we test to see if it is in tracked. If it isn't, then we call
-            the insertFile method and insert it into our database. This search 
-            is costly (O(n^2)), but we can improve it later with a binary 
-            search since the arrays are already sorted.
-        */
-        listing.forEach(function(file) {
-            if (!(file in tracked)) {
-                insertFile(file);
-            }
-        });
-    } else if (listing.length < tracked.length) {
-        /*
-            If the number of files in the directory is less than the number 
-            of files in trackedFiles.json, we want to remove documents from
-            the database. We find each element in tracked and not in the
-            directory and remove it from the database and then 
-            trackedFiles.json.
-        */
-        tracked.forEach(function(file) {
-            if (!(file in listing)) {
-                removeFile(file);
-            }
-        });
-    }
-}
-
-function insertFile(file) {
-    var file = file;
-    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
-        if (err) {
-            logger.log('error', "Was not able to read the file.");
-        }
-
-        var model = mongoose.model(modelNames[0]);
-        if (model) {
-            var obj = JSON.parse(content);
-            model.create(obj, function(err, doc) {
-                if (err) {
-                    logger.log('error', "An error occurred. " + file + " was not inserted into database.");
-                }
-
-                logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                addToTrackedFiles(file, doc._id);
-            });
-        } else {
-            logger.log('error', "Could not insert " + file + " into database.");
-        }
-    });
-}
-
 function updateFile(file) {
-    var file = file;
-    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
+    fs.readFile(dir + file, 'utf8', function(err, content) {
         if (err) {
             logger.log('error', "Was not able to update " + file + ".");
         }
@@ -301,7 +284,8 @@ function updateFile(file) {
             logger.log('error', file + " cannot be empty.");
         }
 
-        var model = mongoose.model(modelNames[0]);
+        // var model = mongoose.modelNames();
+        console.log(mongoose.modelNames());
         if (model) {
             var updatedDoc = JSON.parse(content);
             fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8',
@@ -329,7 +313,6 @@ function updateFile(file) {
 }
 
 function removeFile(file) {
-    var file = file;
     fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, content) {
         if (err) {
             logger.log('error', "Was not able to read trackedFiles.json.");
@@ -374,7 +357,7 @@ function findAndValidateModel(file) {
         exception. The user must create a schema before moving any files 
         into the directory.
     */
-    fs.readFile(path.join(__dirname, file), 'utf8', function(err, data) {
+    fs.readFile(file, 'utf8', function(err, data) {
         var obj = JSON.parse(data);
         // Validates the file. If there are no errors,
         // we can return the correct model.
@@ -402,6 +385,7 @@ function addToTrackedFiles(file, id) {
         remove a document from the database, the id must first exist in
         the trackedFiles.json file.
     */
+
     fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
         // If trackedFiles.json is not empty then...
         if (data) {
@@ -414,14 +398,14 @@ function addToTrackedFiles(file, id) {
                 another. Mongoose, however, handles asynchrously operations
                 perfectly so we don't have to worry about the database.
             */
-            fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
+            fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
                 function(err, fd) {
                     if (err) {
                         logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
                     }
 
                     var writeBuf = new Buffer(JSON.stringify(fileObj));
-                    fs.writeSync(fd, writeBuf, 0, writeBuf.length, 0);
+                    fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
                     logger.log('info', "Successfully added " + file + " to tracked files.");
                     logger.log('info', 'Original tracked files has been updated.');
 
@@ -432,14 +416,22 @@ function addToTrackedFiles(file, id) {
             // else do...
             var trackObject = {};
             trackObject[file] = id;
-            fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
+
+            // fs.writeFile(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject),
+            //     function(err) {
+            //         if (err) {
+            //             logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
+            //         }
+            //     });
+
+            fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
                 function(err, fd) {
                     if (err) {
                         logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
                     }
 
                     var writeBuf = new Buffer(JSON.stringify(trackObject));
-                    fs.writeSync(fd, writeBuf, 0, writeBuf.length, 0);
+                    fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
                     logger.log('info', "Successfully added " + file + " to tracked files.");
                     logger.log('info', 'Original tracked files has been updated.');
 
@@ -451,7 +443,7 @@ function addToTrackedFiles(file, id) {
 }
 
 function removeFromTrackedFiles(file, obj) {
-    fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w',
+    fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w',
         function(err, fd) {
             if (err) {
                 logger.log('error', "There was a problem. Could not" + " write into tracked files.");
@@ -494,7 +486,7 @@ function arrayEquals(arr1, arr2) {
     ---------------
 */
 
-module.exports = { 
+module.exports = {
     PSPublisher: PSPublisher,
     logger: logger
 };

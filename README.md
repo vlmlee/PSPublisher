@@ -25,7 +25,6 @@ PSPublisher/
 │   ├── all-logs.log
 │   └── exceptions.log
 └── test/
-    ├── database.js
     ├── sample.js
     ├── test.js
     └── test.json

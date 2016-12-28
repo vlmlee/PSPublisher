@@ -1,16 +1,18 @@
-var PSPublisher = require('../index');
+var path = require('path'),
+	directory = path.join(__dirname, 'test-directory');
 
-var publish = new PSPublisher('./test');
-
-publish.connect('mongodb://localhost/app');
-
-publish.models([{
+let model = [{
 	"name": "Test",
 	"schema": {
 		"test": String,
 		"sample": String
 	}
-}]);
+}];
+
+var PSPublisher = require('../index').PSPublisher,
+	publish = new PSPublisher(directory, model); 
+
+publish.connect('mongodb://localhost/app');
 
 publish.start();
 
