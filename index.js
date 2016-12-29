@@ -124,62 +124,53 @@ class PSPublisher {
             persistent: true
         });
 
-        watcher.on('ready', function() {
-            logger.log('info', "Began watching " + dir);
-            /* 
-                Checks and sees what files are currently being watched. Chokidar also
-                tracks the directory itself so it's necessary to grab the property that 
-                only has the files. Our file listings is going to be our canonical record.
-                Our "tracked files" in trackedFiles.json holds the id of the documents in 
-                our database when they were first added. When the file is no longer in the 
-                directory, we will remove the document from the database and then untrack it.
+        logger.log('info', "Began watching " + dir);
+        /* 
+            Checks and sees what files are currently being watched. Chokidar also
+            tracks the directory itself so it's necessary to grab the property that 
+            only has the files. Our file listings is going to be our canonical record.
+            Our "tracked files" in trackedFiles.json holds the id of the documents in 
+            our database when they were first added. When the file is no longer in the 
+            directory, we will remove the document from the database and then untrack it.
+        */
+        const Watched = watcher.getWatched();
+        let fileListings = Watched[dir].sort();
+
+        // Reconcile the file listings with the record of tracked files. This 
+        // will be used to update the database on this script's startup.
+        fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
+            let trackedFiles,
+                trackedKeys;
+
+            if (err) {
+                logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
+            }
+
+            if (data) {
+                trackedFiles = JSON.parse(data),
+                    trackedKeys = Object.keys(trackedFiles).sort();
+            } else {
+                trackedKeys = [];
+            }
+
+            /*  
+                trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
+                We can also do:
+                Object.keys(trackedFiles).forEach(function (key) {
+                    let value = trackedFiles[key];
+                    logger.log('info', value);
+                });
             */
-            const Watched = watcher.getWatched();
-            let fileListings = Watched[dir].sort();
+            console.log(models);
 
-            // Reconcile the file listings with the record of tracked files. This 
-            // will be used to update the database on this script's startup.
-            fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
-                let trackedFiles,
-                    trackedKeys;
-
-                if (err) {
-                    logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
-                }
-
-                if (data) {
-                    trackedFiles = JSON.parse(data),
-                        trackedKeys = Object.keys(trackedFiles).sort();
-                } else {
-                    trackedKeys = [];
-                }
-
-<<<<<<< HEAD
-                /*  
-                    trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
-                    We can also do:
-                    Object.keys(trackedFiles).forEach(function (key) {
-                        let value = trackedFiles[key];
-                        logger.log('info', value);
-                    });
-                */
-                console.log(models);
-
-                if (arrayEquals(fileListings, trackedKeys)) {
-                    logger.log('info', "Files are in sync. Will be listening for changes.");
-                } else if (fileListings.length === 0) {
-=======
             if (arrayEquals(fileListings, trackedKeys)) {
                 logger.log('info', "Files are in sync. Will be listening for changes.");
+            } else if (fileListings.length === 0) {
+                logger.log('info', "There are currently no files in " + dir + ".");
             } else {
-                if (!fileListings) {
->>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
-                    logger.log('info', "There are currently no files in " + dir + ".");
-                } else {
-                    logger.log('info', "Files in " + dir + " are not in sync.");
-                    this.syncFiles(fileListings, trackedKeys, dir);
-                }
-            });
+                logger.log('info', "Files in " + dir + " are not in sync.");
+                this.syncFiles(fileListings, trackedKeys, dir);
+            }
         });
 
         watcher.on('add', function(file) {
@@ -210,17 +201,9 @@ class PSPublisher {
         });
     }
 
-<<<<<<< HEAD
     exit() {
         process.exit();
     }
-=======
-function insertFile(file) {
-    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
-        if (err) {
-            logger.log('error', "Was not able to read the file.");
-        }
->>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
 
     syncFiles(listing, tracked, dir) {
         logger.log('info', "Syncing files...");
@@ -290,11 +273,7 @@ function insertFile(file) {
 */
 
 function updateFile(file) {
-<<<<<<< HEAD
     fs.readFile(dir + file, 'utf8', function(err, content) {
-=======
-    fs.readFile(path.join(__dirname, file), 'utf8', function(err, content) {
->>>>>>> 38a60fa1df409b23c2b313012c78835f1b663513
         if (err) {
             logger.log('error', "Was not able to update " + file + ".");
         }
