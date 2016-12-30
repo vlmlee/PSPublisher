@@ -250,17 +250,83 @@ class pspublisher {
             // console.log(this.models);
             var model = mongoose.model(self.models[0]);
             if (model) {
-                var obj = JSON.parse(content);
+                let obj = JSON.parse(content);
                 model.create(obj, function(err, doc) {
                     if (err) {
                         logger.log('error', "An error occurred. " + file + " was not inserted into database.");
                     }
 
                     logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                    addToTrackedFiles(file, doc._id);
+                    self.addToTrackedFiles(file, doc._id);
                 });
             } else {
                 logger.log('error', "Could not insert " + file + " into database.");
+            }
+        });
+    }
+
+    addToTrackedFiles(file, id) {
+        /*  
+            This helper function will write into trackedFiles.json a key-value
+            pair of the form:
+            
+                file: id
+
+            This will allow quick and easy access to finding the document in
+            the database by using Obj.file as the query condition. The id can
+            only be added after an insert into the database so in order to 
+            remove a document from the database, the id must first exist in
+            the trackedFiles.json file.
+        */
+        const self = this;
+        fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
+            if (err) {
+                console.log(err);
+            }
+            // If trackedFiles.json is not empty then...
+            if (data) {
+                let fileObj = JSON.parse(data);
+                fileObj[file] = id;
+                /*
+                    trackedFiles.json must be opened synchronously or else we 
+                    have the problem of one I/O operation overwriting one 
+                    another. Mongoose, however, handles asynchrously operations
+                    perfectly so we don't have to worry about the database.
+                */
+                fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'a+', 'utf8',
+                    function(err, fd) {
+                        if (err) {
+                            logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
+                        }
+
+                        let writeBuf = new Buffer(JSON.stringify(fileObj));
+                        fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
+                        logger.log('info', "Successfully added " + file + " to tracked files.");
+                        logger.log('info', 'Original tracked files has been updated.');
+
+                        fs.closeSync(fd);
+                    }
+                );
+            } else {
+                // else do...
+                let trackObject = {};
+                trackObject[file] = id;
+
+                // fs.writeFile(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject),
+                //     function(err) {
+                //         if (err) {
+                //             logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
+                //         }
+                //     });
+
+                fs.writeFileSync(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject), 'utf-8', (err) => {
+                    if (err) {
+                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
+                    }
+
+                    logger.log('info', "Successfully added " + file + " to tracked files.");
+                    logger.log('info', 'Original tracked files has been updated.');
+                });
             }
         });
     }
@@ -368,76 +434,6 @@ function findAndValidateModel(file) {
         });
     });
     logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
-}
-
-function addToTrackedFiles(file, id) {
-    /*  
-        This helper function will write into trackedFiles.json a key-value
-        pair of the form:
-        
-            file: id
-
-        This will allow quick and easy access to finding the document in
-        the database by using Obj.file as the query condition. The id can
-        only be added after an insert into the database so in order to 
-        remove a document from the database, the id must first exist in
-        the trackedFiles.json file.
-    */
-
-    fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
-        // If trackedFiles.json is not empty then...
-        if (data) {
-            var fileObj = JSON.parse(data);
-            fileObj[file] = id;
-
-            /*
-                trackedFiles.json must be opened synchronously or else we 
-                have the problem of one I/O operation overwriting one 
-                another. Mongoose, however, handles asynchrously operations
-                perfectly so we don't have to worry about the database.
-            */
-            fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
-                function(err, fd) {
-                    if (err) {
-                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                    }
-
-                    var writeBuf = new Buffer(JSON.stringify(fileObj));
-                    fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
-                    logger.log('info', "Successfully added " + file + " to tracked files.");
-                    logger.log('info', 'Original tracked files has been updated.');
-
-                    fs.closeSync(fd);
-                }
-            );
-        } else {
-            // else do...
-            var trackObject = {};
-            trackObject[file] = id;
-
-            // fs.writeFile(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject),
-            //     function(err) {
-            //         if (err) {
-            //             logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-            //         }
-            //     });
-
-            fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w', 'utf8',
-                function(err, fd) {
-                    if (err) {
-                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                    }
-
-                    var writeBuf = new Buffer(JSON.stringify(trackObject));
-                    fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
-                    logger.log('info', "Successfully added " + file + " to tracked files.");
-                    logger.log('info', 'Original tracked files has been updated.');
-
-                    fs.closeSync(fd);
-                }
-            );
-        }
-    });
 }
 
 function removeFromTrackedFiles(file, obj) {
