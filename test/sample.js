@@ -13,6 +13,5 @@ var pspublisher = require('../index').pspublisher,
 	publish = new pspublisher(directory, model); 
 
 publish.connect('mongodb://localhost/app');
-
 publish.start();
 

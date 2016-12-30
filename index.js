@@ -106,7 +106,7 @@ class pspublisher {
         logger.log('info', "pspublisher is starting...");
 
         const dir = this.directory;
-        const models = this.models;
+        const self = this;
 
         // Trim off the end of the path since chokidar have absolute directory
         // paths without a trailing backslash. This will protect users.
@@ -115,7 +115,7 @@ class pspublisher {
         }
 
         // This will initialize the watcher, i.e. the main event emitter. We will
-        // be calling watch() on an instance of pspublish to use it as a wrapper
+        // be calling watch() on an instance of pspublisher to use it as a wrapper
         // around chokidar with preconfigured events.
         const watcher = chokidar.watch(dir, {
             ignored: [
@@ -124,66 +124,66 @@ class pspublisher {
             persistent: true
         });
 
-        logger.log('info', "Began watching " + dir);
-        /* 
-            Checks and sees what files are currently being watched. Chokidar also
-            tracks the directory itself so it's necessary to grab the property that 
-            only has the files. Our file listings is going to be our canonical record.
-            Our "tracked files" in trackedFiles.json holds the id of the documents in 
-            our database when they were first added. When the file is no longer in the 
-            directory, we will remove the document from the database and then untrack it.
-        */
-        const Watched = watcher.getWatched();
-        let fileListings = Watched[dir].sort();
-
-        // Reconcile the file listings with the record of tracked files. This 
-        // will be used to update the database on this script's startup.
-        fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
-            let trackedFiles,
-                trackedKeys;
-
-            if (err) {
-                logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
-            }
-
-            if (data) {
-                trackedFiles = JSON.parse(data),
-                    trackedKeys = Object.keys(trackedFiles).sort();
-            } else {
-                trackedKeys = [];
-            }
-
-            /*  
-                trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
-                We can also do:
-                Object.keys(trackedFiles).forEach(function (key) {
-                    let value = trackedFiles[key];
-                    logger.log('info', value);
-                });
+        watcher.on('ready', () => {
+            logger.log('info', "Began watching " + dir);
+            /* 
+                Checks and sees what files are currently being watched. Chokidar also
+                tracks the directory itself so it's necessary to grab the property that 
+                only has the files. Our file listings is going to be our canonical record.
+                Our "tracked files" in trackedFiles.json holds the id of the documents in 
+                our database when they were first added. When the file is no longer in the 
+                directory, we will remove the document from the database and then untrack it.
             */
-            console.log(models);
+            const Watched = watcher.getWatched();
+            let fileListings = Watched[dir].sort();
 
-            if (arrayEquals(fileListings, trackedKeys)) {
-                logger.log('info', "Files are in sync. Will be listening for changes.");
-            } else if (fileListings.length === 0) {
-                logger.log('info', "There are currently no files in " + dir + ".");
-            } else {
-                logger.log('info', "Files in " + dir + " are not in sync.");
-                this.syncFiles(fileListings, trackedKeys, dir);
-            }
+            // Reconcile the file listings with the record of tracked files. This 
+            // will be used to update the database on this script's startup.
+            fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', (err, data) => {
+                if (err) {
+                    logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
+                }
+
+                let trackedFiles,
+                    trackedKeys;
+                if (data) {
+                    trackedFiles = JSON.parse(data),
+                        trackedKeys = Object.keys(trackedFiles).sort();
+                } else {
+                    trackedKeys = [];
+                }
+
+                /*  
+                    trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
+                    We can also do:
+                    Object.keys(trackedFiles).forEach(function (key) {
+                        let value = trackedFiles[key];
+                        logger.log('info', value);
+                    });
+                */
+
+                if (arrayEquals(fileListings, trackedKeys)) {
+                    logger.log('info', "Files are in sync. Will be listening for changes.");
+                } else if (fileListings.length === 0) {
+                    logger.log('info', "There are currently no files in " + dir + ".");
+                } else {
+                    logger.log('info', "Files in " + dir + " are not in sync.");
+                    self.syncFiles(fileListings, trackedKeys, dir);
+                }
+            });
         });
 
-        watcher.on('add', function(file) {
+        watcher.on('add', (file) => {
             logger.log('info', file + " was added to " + dir + ".");
             this.insertFile(file, dir);
         });
 
-        watcher.on('change', function(file, stats) {
+        watcher.on('change', (file, stats) => {
             logger.log('info', file + " was modified at " + stats.mtime + ".");
             this.updateFile(file, dir);
         });
 
-        watcher.on('unlink', function(file) {
+        watcher.on('unlink', (file) => {
             logger.log('info', file + " was removed from " + dir + ".");
             this.removeFile(file, dir);
         });
@@ -206,6 +206,7 @@ class pspublisher {
     }
 
     syncFiles(listing, tracked, dir) {
+        const self = this;
         logger.log('info', "Syncing files...");
         if (listing.length > tracked.length) {
             /*  
@@ -220,7 +221,7 @@ class pspublisher {
             */
             listing.forEach(file => {
                 if (!(file in tracked)) {
-                    this.insertFile(file, dir);
+                    self.insertFile(file, dir);
                 }
             });
         } else if (listing.length < tracked.length) {
@@ -233,22 +234,21 @@ class pspublisher {
             */
             tracked.forEach(file => {
                 if (!(file in listing)) {
-                    this.removeFile(file, dir);
+                    self.removeFile(file, dir);
                 }
             });
         }
     }
 
     insertFile(file, dir) {
+        const self = this;
         fs.readFile(path.resolve(dir, file), 'utf8', function(err, content) {
             if (err) {
                 console.log(err);
                 logger.log('error', "Was not able to read the file for some reason.");
             }
-            console.log('hello');
-            // var model = mongoose.model(modelNames[0]);
-            console.log(this.models);
-            console.log(mongoose.modelNames());
+            // console.log(this.models);
+            var model = mongoose.model(self.models[0]);
             if (model) {
                 var obj = JSON.parse(content);
                 model.create(obj, function(err, doc) {
