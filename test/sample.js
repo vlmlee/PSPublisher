@@ -6,7 +6,8 @@ let model = [{
 	"schema": {
 		"test": String,
 		"sample": String
-	}
+	},
+	"collection": "testdb"
 }];
 
 var pspublisher = require('../index').pspublisher,

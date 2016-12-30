@@ -95,7 +95,7 @@ class pspublisher {
             }
             for (let i = 0; i < models.length; i++) {
                 let Schema = new mongoose.Schema(models[i].schema, { timestamps: true });
-                mongoose.model(models[i].name, Schema);
+                mongoose.model(models[i].name, Schema, models[i].collection);
                 modelNames.push(models[i].name);
             }
             return modelNames;
@@ -287,26 +287,21 @@ class pspublisher {
             if (data) {
                 let fileObj = JSON.parse(data);
                 fileObj[file] = id;
+
                 /*
                     trackedFiles.json must be opened synchronously or else we 
                     have the problem of one I/O operation overwriting one 
                     another. Mongoose, however, handles asynchrously operations
                     perfectly so we don't have to worry about the database.
                 */
-                fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'a+', 'utf8',
-                    function(err, fd) {
-                        if (err) {
-                            logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                        }
 
-                        let writeBuf = new Buffer(JSON.stringify(fileObj));
-                        fs.writeFile(fd, writeBuf, 0, writeBuf.length, 0);
-                        logger.log('info', "Successfully added " + file + " to tracked files.");
-                        logger.log('info', 'Original tracked files has been updated.');
-
-                        fs.closeSync(fd);
+                fs.writeFileSync(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(fileObj), 'utf-8', (err) => {
+                    if (err) {
+                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
                     }
-                );
+                    logger.log('info', "Successfully added " + file + " to tracked files.");
+                    logger.log('info', 'Original tracked files has been updated.');
+                });
             } else {
                 // else do...
                 let trackObject = {};
@@ -323,7 +318,6 @@ class pspublisher {
                     if (err) {
                         logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
                     }
-
                     logger.log('info', "Successfully added " + file + " to tracked files.");
                     logger.log('info', 'Original tracked files has been updated.');
                 });
