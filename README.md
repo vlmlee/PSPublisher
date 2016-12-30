@@ -1,6 +1,6 @@
 # Pretty Simple Publisher
 
-PSPublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
+pspublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
 
 ## !!! WARNING !!!
 
@@ -8,12 +8,12 @@ Not yet compatible with ES2016.
 
 ### Installation
 
-You can clone this repo with `git clone https://github.com/vlmlee/PSPublisher.git` and then run `npm install` from inside the cloned directory to install the dependencies.
+You can clone this repo with `git clone https://github.com/vlmlee/pspublisher.git` and then run `npm install` from inside the cloned directory to install the dependencies.
 
 Later, you will be able to install this module by running:
 
 ```bash
-npm install PSPublisher
+npm install pspublisher
 ```
 
 This will be after I finish the testing suite for it.
@@ -21,7 +21,7 @@ This will be after I finish the testing suite for it.
 ## Overview 
 
 ```
-PSPublisher/
+pspublisher/
 ├── index.js
 ├── lib/
 │   └── trackedFiles.json
@@ -42,9 +42,9 @@ So why not automate the process? And so we did.
 
 ### Usage
 
-PSPublisher is built on top of [chokidar][2] and [mongoose][3]. Both are mature and robust modules that made this project possible. Both are built with asynchronicity in mind.
+pspublisher is built on top of [chokidar][2] and [mongoose][3]. Both are mature and robust modules that made this project possible. Both are built with asynchronicity in mind.
 
-For now, we will want to use PSPublisher like this if it's in the same path:
+For now, we will want to use pspublisher like this if it's in the same path:
 
 ```js
 var publisher = require('./index');
@@ -53,7 +53,7 @@ var publisher = require('./index');
 Later, we'll be able to require it just like any other node module.
 
 ```js
-var publisher = require('PSPublisher');
+var publisher = require('pspublisher');
 ```
 
 To use it, we define a path or directory that we want it to watch. We then also tell it what database to send our documents to.
@@ -67,7 +67,7 @@ publisher.connect('mongodb://localhost/myapp');
 publisher(path).connect('mongodb://localhost/myapp');
 ```
 
-After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. PSPublisher currently has no support for subdocuments. 
+After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. pspublisher currently has no support for subdocuments. 
 
 ```js
 publisher.models([{
@@ -92,7 +92,7 @@ Then, just set up your mongo database, move your files into that directory, and 
 
 ### Recommendations
 
-For the time being, only json files are supported. Make sure your schemas that have important requirements uses **required**. Also, as of right now, you can only use *one* schema for *one* instance of PSPublisher. 
+For the time being, only json files are supported. Make sure your schemas that have important requirements uses **required**. Also, as of right now, you can only use *one* schema for *one* instance of pspublisher. 
 
 To have the script automatically exit when an exception is thrown, you will want to change `exitOnError` on the logger to true:
 

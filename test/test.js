@@ -1,11 +1,11 @@
 'use strict';
 var expect = require('chai').expect,
     fs = require('fs-extra'),
-    PSPublisher = require('../index').PSPublisher,
+    pspublisher = require('../index').pspublisher,
     assert = require('assert'),
     MongoClient = require('mongodb').MongoClient;
 
-var publish = new PSPublisher('./testDir'),
+var publish = new pspublisher('./testDir'),
     url = 'mongodb://localhost:27017/blog';
 
 publish.connect(url);
@@ -28,7 +28,7 @@ publish.start();
 //   });
 // });
 
-// describe('PSPublisher', function() {
+// describe('pspublisher', function() {
 
 //     // describe('trackedFiles at start', () => {
 //     //     it('should be empty before the script starts', () => {

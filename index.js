@@ -63,7 +63,7 @@ const logger = new winston.Logger({
 
 /*  
     -----------------------------
-        Main PSPublisher Class  
+        Main pspublisher Class  
     -----------------------------
     
     * Register Schemas in order to interface with Database using Mongoose.
@@ -71,7 +71,7 @@ const logger = new winston.Logger({
 
     Example:
 
-        PSPublisher( { directory } , [{
+        pspublisher( { directory } , [{
             name: 'Posts',
             schema: {
                 'title': title,
@@ -82,7 +82,7 @@ const logger = new winston.Logger({
     Currently does not have support for subdocuments. 
 */
 
-class PSPublisher {
+class pspublisher {
     constructor(directory, modelsArray) {
         this.directory = directory;
         this.models = (function(models) {
@@ -103,7 +103,7 @@ class PSPublisher {
     }
 
     start() {
-        logger.log('info', "PSPublisher is starting...");
+        logger.log('info', "pspublisher is starting...");
 
         const dir = this.directory;
         const models = this.models;
@@ -115,7 +115,7 @@ class PSPublisher {
         }
 
         // This will initialize the watcher, i.e. the main event emitter. We will
-        // be calling watch() on an instance of PSPublish to use it as a wrapper
+        // be calling watch() on an instance of pspublish to use it as a wrapper
         // around chokidar with preconfigured events.
         const watcher = chokidar.watch(dir, {
             ignored: [
@@ -485,6 +485,6 @@ function arrayEquals(arr1, arr2) {
 */
 
 module.exports = {
-    PSPublisher: PSPublisher,
+    pspublisher: pspublisher,
     logger: logger
 };

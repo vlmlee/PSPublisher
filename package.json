@@ -1,5 +1,5 @@
 {
-  "name": "PSPublisher",
+  "name": "pspublisher",
   "version": "1.0.0",
   "author": "Michael Lee <mlee@vellichorlabs.com>",
   "description": "A module for automatic, asynchronous CRUD operations on a Mongo database.",

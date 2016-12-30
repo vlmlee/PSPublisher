@@ -9,8 +9,8 @@ let model = [{
 	}
 }];
 
-var PSPublisher = require('../index').PSPublisher,
-	publish = new PSPublisher(directory, model); 
+var pspublisher = require('../index').pspublisher,
+	publish = new pspublisher(directory, model); 
 
 publish.connect('mongodb://localhost/app');
 
