@@ -6,8 +6,7 @@ const fs = require('fs'),
     junk = require('junk'),
     path = require('path'),
     validate = require('json-schema').validate,
-    ObjectId = require('mongodb').ObjectID,
-    omit = require('object.omit');
+    ObjectId = require('mongodb').ObjectID;
 
 /*  
     ---------------------
