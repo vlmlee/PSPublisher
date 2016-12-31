@@ -27,6 +27,7 @@
     "mocha": "^3.1.2",
     "mongodb": "^2.0.27",
     "mongoose": "^4.5.10",
+    "object.omit": "^2.0.1",
     "winston": "^2.2.0"
   },
   "devDependencies": {}

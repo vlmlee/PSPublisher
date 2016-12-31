@@ -6,7 +6,8 @@ const fs = require('fs'),
     junk = require('junk'),
     path = require('path'),
     validate = require('json-schema').validate,
-    ObjectId = require('mongodb').ObjectID;
+    ObjectId = require('mongodb').ObjectID,
+    omit = require('object.omit');
 
 /*  
     ---------------------
@@ -252,19 +253,24 @@ class pspublisher {
             if (err) {
                 logger.log('error', "Was not able to read the file for some reason.");
             }
+
             let obj = JSON.parse(content);
-                obj["file"] = file;
-
+            const schema = model.schema;
+            obj["file"] = file;
             if (model) {
-                model.create(obj, function(err, doc) {
-                    if (err) {
-                        logger.log('error', "An error occurred. " + file + " was not inserted into database.");
-                    }
+                if (self.validate(obj, schema)) {
+                    model.create(obj, function(err, doc) {
+                        if (err) {
+                            logger.log('error', "An error occurred. " + file + " was not inserted into database.");
+                        }
 
-                    logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                    self._stack.push({ [file]: doc._id });
-                    self.addToTrackedFiles();
-                });
+                        logger.log('info', file + " was successfully inserted. id: " + doc._id);
+                        self._stack.push({ [file]: doc._id });
+                        self.addToTrackedFiles();
+                    });
+                } else {
+                    logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
+                }
             } else {
                 logger.log('error', "Could not insert " + file + " into database.");
             }
@@ -273,20 +279,27 @@ class pspublisher {
 
     updateFile(file) {
         const model = mongoose.model(this._models[0]);
+        let self = this;
         fs.readFile(file, 'utf8', function(err, content) {
             if (err) {
                 logger.log('error', "Was not able to update " + file + ".");
             }
 
             let updatedDoc = JSON.parse(content);
+            updatedDoc["file"] = file;
+            const schema = model.schema;
             if (model) {
-                model.findOneAndUpdate({ file: file }, updatedDoc, { upsert: true }, (err, doc) => {
-                    if (err) {
-                        logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
-                    }
+                if (self.validate(updatedDoc, schema)) {
+                    model.findOneAndUpdate({ file: file }, updatedDoc, { upsert: true }, (err, doc) => {
+                        if (err) {
+                            logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
+                        }
 
-                    logger.log('info', file + " was successfully updated.");
-                });
+                        logger.log('info', file + " was successfully updated.");
+                    });
+                } else {
+                    logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
+                }
             } else {
                 logger.log('error', "Could not find " + file + " in the tracked files.");
             }
@@ -370,34 +383,16 @@ class pspublisher {
             logger.log('error', "trackedFiles is empty. Could not delete " + file + " from trackedFiles.");
         }
     }
-}
 
-/*  
-    -----------------------------
-        CRUD Helper Functions
-    -----------------------------
-*/
-
-function findAndValidateModel(file) {
-    /*  
-        This helper function will check if the file has a valid schema.
-        It will return a model if it does. If not, it will throw an 
-        exception. The user must create a schema before moving any files 
-        into the directory.
-    */
-    fs.readFile(file, 'utf8', function(err, data) {
-        var obj = JSON.parse(data);
-        // Validates the file. If there are no errors,
-        // we can return the correct model.
-        modelNames.forEach(function(name) {
-            var schema = mongoose.model(name).schema;
-            if ((validate(obj, schema).valid)) {
-                logger.log('info', "Schema found!");
-                return mongoose.model(name);
+    validate(doc, schema) {
+        for (let i = 0; i < Object.keys(doc).length; i++) {
+            console.log(i);
+            if (Object.keys(doc)[i] !== Object.keys(schema.obj)[i]) {
+                return false;
             }
-        });
-    });
-    logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
+        }
+        return true;
+    }
 }
 
 /*  
