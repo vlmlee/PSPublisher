@@ -124,6 +124,7 @@ class pspublisher {
             ],
             persistent: true,
             awaitWriteFinish: true,
+            ignoreInitial: true,
         });
 
         watcher.on('ready', () => {
@@ -172,7 +173,7 @@ class pspublisher {
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
                     logger.log('info', "Files in " + dir + " are not in sync.");
-                    // self.syncFiles(fileListings, trackedKeys, dir);
+                    self.syncFiles(fileListings, trackedKeys, dir);
                 }
             });
         });
