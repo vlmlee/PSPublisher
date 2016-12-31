@@ -1,8 +1,0 @@
-{"level":"info","message":"pspublisher is starting...","timestamp":"2016-12-31T03:20:20.879Z"}
-{"level":"info","message":"Connected to mongodb://localhost/app","timestamp":"2016-12-31T03:20:20.936Z"}
-{"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2016-12-31T03:20:20.944Z"}
-{"level":"info","message":"Files in /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory are not in sync.","timestamp":"2016-12-31T03:20:20.946Z"}
-{"level":"info","message":"/Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory/test1.json was removed from /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory.","timestamp":"2016-12-31T03:20:38.607Z"}
-{"level":"info","message":"Successfully removed /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory/test1.json from collection.","timestamp":"2016-12-31T03:20:38.669Z"}
-{"level":"info","message":"/Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory/test1.json was added to /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory.","timestamp":"2016-12-31T03:20:42.857Z"}
-{"level":"info","message":"/Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory/test1.json was successfully inserted. id: 5867240ac880e832c1c75853","timestamp":"2016-12-31T03:20:42.880Z"}

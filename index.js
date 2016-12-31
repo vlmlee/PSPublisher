@@ -100,7 +100,7 @@ class pspublisher {
             }
             return modelNames;
         })(modelsArray);
-        this._queue = [];
+        this._stack = [];
     }
 
     start() {
@@ -247,9 +247,9 @@ class pspublisher {
 
     insertFile(file, dir) {
         const model = mongoose.model(this._models[0]);
+        const self = this;
         fs.readFile(file, 'utf8', function(err, content) {
             if (err) {
-                console.log(err);
                 logger.log('error', "Was not able to read the file for some reason.");
             }
             let obj = JSON.parse(content);
@@ -262,60 +262,11 @@ class pspublisher {
                     }
 
                     logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                    // self.addToTrackedFiles(file, doc._id);
+                    self._stack.push({ [file]: doc._id });
+                    self.addToTrackedFiles();
                 });
             } else {
                 logger.log('error', "Could not insert " + file + " into database.");
-            }
-        });
-    }
-
-    addToTrackedFiles(file, id) {
-
-        /*  
-            This helper function will write into trackedFiles.json a key-value
-            pair of the form:
-            
-                file: id
-
-            This will allow quick and easy access to finding the document in
-            the database by using Obj.file as the query condition. The id can
-            only be added after an insert into the database so in order to 
-            remove a document from the database, the id must first exist in
-            the trackedFiles.json file.
-        */
-
-        fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, fd) {
-            if (err) {
-                console.log(err);
-            }
-
-            let data = fs.readFileSync(fd, 'utf8');
-            // If trackedFiles.json is not empty then...
-            if (data) {
-                let fileObj = JSON.parse(data);
-                fileObj[file] = id;
-
-                /*
-                    trackedFiles.json must be opened synchronously or else we 
-                    have the problem of one I/O operation overwriting one 
-                    another. Mongoose, however, handles asynchrously operations
-                    perfectly so we don't have to worry about the database.
-                */
-
-                fs.writeSync(fd, JSON.stringify(trackObject));
-                fs.closeSync(fd);
-                logger.log('info', "Successfully added " + file + " to tracked files.");
-                logger.log('info', 'Original tracked files has been updated.');
-            } else {
-                // else do...
-                let trackObject = {};
-                trackObject[file] = id;
-
-                fs.writeSync(fd, JSON.stringify(trackObject));
-                fs.closeSync(fd);
-                logger.log('info', "Successfully added " + file + " to tracked files.");
-                logger.log('info', 'Original tracked files has been updated.');
             }
         });
     }
@@ -344,6 +295,7 @@ class pspublisher {
 
     removeFile(file) {
         let model = mongoose.model(this._models[0]);
+        const self = this;
         if (model) {
             model.remove({ file: file }, function(err) {
                 if (err) {
@@ -351,37 +303,72 @@ class pspublisher {
                 }
 
                 logger.log('info', "Successfully removed " + file + " from collection.");
-
-                // Simply delete the key-value pair and overwrites the 
-                // original file with one less element.
-                // delete fileObj[file];
-
-                // if (fileObj) {
-                //     removeFromTrackedFiles(file, fileObj);
-                // } else {
-                //     removeFromTrackedFiles(file, {});
-                // }
+                self.removeFromTrackedFiles(file);
             });
         } else {
             logger.log('error', "Could not delete " + file + " from database.");
         }
     }
 
-    removeFromTrackedFiles(file, obj) {
-        fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w',
-            function(err, fd) {
-                if (err) {
-                    logger.log('error', "There was a problem. Could not" + " write into tracked files.");
-                }
+    addToTrackedFiles() {
+        const self = this;
 
-                let writeBuf = new Buffer(JSON.stringify(obj));
-                fs.writeSync(fd, writeBuf, 0, writeBuf.length, 0);
-                logger.log('info', "Successfully removed " + file + " from tracked files.");
-                logger.log('info', 'Original tracked files has been updated.');
+        /*  
+            This helper function will write into trackedFiles.json a key-value
+            pair of the form:
+            
+                file: id
 
-                fs.closeSync(fd);
-            }
-        );
+            This will allow quick and easy access to finding the document in
+            the database by using Obj.file as the query condition. The id can
+            only be added after an insert into the database so in order to 
+            remove a document from the database, the id must first exist in
+            the trackedFiles.json file.
+        */
+
+        let data = fs.readFileSync(path.join(__dirname, './lib/trackedFiles.json'), 'utf8');
+
+        if (data) {
+            let trackedFilesArr = JSON.parse(data);
+            trackedFilesArr.push(self._stack.pop());
+
+            /* 
+                trackedFiles.json must be opened synchronously or else we 
+                have the problem of one I/O operation overwriting one 
+                another. Mongoose, however, handles asynchrously operations
+                perfectly so we don't have to worry about the database.
+            */
+
+            let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+');
+            fs.writeSync(fd, JSON.stringify(trackedFilesArr));
+            fs.closeSync(fd);
+            logger.log('info', "Successfully added " + file + " to tracked files.");
+            logger.log('info', 'Original tracked files has been updated.');
+        } else {
+            // If trackedFiles.json is not empty then...
+            let trackedFilesArr = [];
+            trackedFilesArr.push(self._stack.pop());
+            let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+');
+            fs.writeSync(fd, JSON.stringify(trackedFilesArr));
+            fs.closeSync(fd);
+            logger.log('info', "Successfully added " + file + " to tracked files.");
+            logger.log('info', 'Original tracked files has been updated.');
+        } 
+    }
+
+    removeFromTrackedFiles(file) {       
+        let data = fs.readFileSync(path.join(__dirname, './lib/trackedFiles.json'), 'utf8');
+        if (data) {
+            let trackedFilesArr = JSON.parse(data);
+            let filterTracked = trackedFilesArr.filter(el => Object.keys(el)[0] !== file);
+            let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+'); 
+            fs.writeSync(fd, JSON.stringify(filterTracked));
+            fs.closeSync(fd);
+            logger.log('info', "Successfully removed " + file + " from tracked files.");
+            logger.log('info', 'Original tracked files has been updated.');
+        } else {
+            logger.log('error', "trackedFiles is empty. Could not delete " + file + " from trackedFiles.");
+        }
     }
 }
 
