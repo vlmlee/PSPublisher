@@ -207,10 +207,6 @@ class pspublisher {
         });
     }
 
-    exit() {
-        process.exit();
-    }
-
     syncFiles(listing, tracked, dir) {
         const self = this;
         logger.log('info', "Syncing files...");
@@ -254,12 +250,12 @@ class pspublisher {
                 logger.log('error', "Was not able to read the file for some reason.");
             }
 
-            let obj = JSON.parse(content);
+            let _document = JSON.parse(content);
             const schema = model.schema;
-            obj["file"] = file;
+            _document["file"] = file;
             if (model) {
-                if (self.validate(obj, schema)) {
-                    model.create(obj, function(err, doc) {
+                if (self.validate(_document, schema)) {
+                    model.create(_document, function(err, doc) {
                         if (err) {
                             logger.log('error', "An error occurred. " + file + " was not inserted into database.");
                         }
@@ -386,12 +382,15 @@ class pspublisher {
 
     validate(doc, schema) {
         for (let i = 0; i < Object.keys(doc).length; i++) {
-            console.log(i);
             if (Object.keys(doc)[i] !== Object.keys(schema.obj)[i]) {
                 return false;
             }
         }
         return true;
+    }
+
+    exit() {
+        process.exit();
     }
 }
 
