@@ -5,7 +5,8 @@ let model = [{
 	"name": "Test",
 	"schema": {
 		"test": String,
-		"sample": String
+		"sample": String,
+		"file": String,
 	},
 	"collection": "testdb"
 }];

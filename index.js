@@ -84,8 +84,8 @@ const logger = new winston.Logger({
 
 class pspublisher {
     constructor(directory, modelsArray) {
-        this.directory = directory;
-        this.models = (function(models) {
+        this._directory = directory;
+        this._models = (function(models) {
             let modelNames = [];
             if (!models) {
                 logger.log('error', "Invalid model. Please use proper formatting" + " or a valid schema.");
@@ -100,12 +100,13 @@ class pspublisher {
             }
             return modelNames;
         })(modelsArray);
+        this._queue = [];
     }
 
     start() {
         logger.log('info', "pspublisher is starting...");
 
-        const dir = this.directory;
+        const dir = this._directory;
         const self = this;
 
         // Trim off the end of the path since chokidar have absolute directory
@@ -121,11 +122,13 @@ class pspublisher {
             ignored: [
                 /[\/\\]\./,
             ],
-            persistent: true
+            persistent: true,
+            awaitWriteFinish: true,
         });
 
         watcher.on('ready', () => {
             logger.log('info', "Began watching " + dir);
+
             /* 
                 Checks and sees what files are currently being watched. Chokidar also
                 tracks the directory itself so it's necessary to grab the property that 
@@ -134,6 +137,7 @@ class pspublisher {
                 our database when they were first added. When the file is no longer in the 
                 directory, we will remove the document from the database and then untrack it.
             */
+
             const Watched = watcher.getWatched();
             let fileListings = Watched[dir].sort();
 
@@ -168,24 +172,24 @@ class pspublisher {
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
                     logger.log('info', "Files in " + dir + " are not in sync.");
-                    self.syncFiles(fileListings, trackedKeys, dir);
+                    // self.syncFiles(fileListings, trackedKeys, dir);
                 }
             });
         });
 
         watcher.on('add', (file) => {
             logger.log('info', file + " was added to " + dir + ".");
-            this.insertFile(file, dir);
+            self.insertFile(file, dir);
         });
 
         watcher.on('change', (file, stats) => {
             logger.log('info', file + " was modified at " + stats.mtime + ".");
-            this.updateFile(file, dir);
+            self.updateFile(file, dir);
         });
 
         watcher.on('unlink', (file) => {
             logger.log('info', file + " was removed from " + dir + ".");
-            this.removeFile(file, dir);
+            self.removeFile(file, dir);
         });
     }
 
@@ -221,7 +225,7 @@ class pspublisher {
             */
             listing.forEach(file => {
                 if (!(file in tracked)) {
-                    self.insertFile(file, dir);
+                    self.insertFile(path.resolve(dir, file), dir);
                 }
             });
         } else if (listing.length < tracked.length) {
@@ -234,30 +238,30 @@ class pspublisher {
             */
             tracked.forEach(file => {
                 if (!(file in listing)) {
-                    self.removeFile(file, dir);
+                    self.removeFile(path.resolve(dir, file), dir);
                 }
             });
         }
     }
 
     insertFile(file, dir) {
-        const self = this;
-        fs.readFile(path.resolve(dir, file), 'utf8', function(err, content) {
+        const model = mongoose.model(this._models[0]);
+        fs.readFile(file, 'utf8', function(err, content) {
             if (err) {
                 console.log(err);
                 logger.log('error', "Was not able to read the file for some reason.");
             }
-            // console.log(this.models);
-            var model = mongoose.model(self.models[0]);
+            let obj = JSON.parse(content);
+                obj["file"] = file;
+
             if (model) {
-                let obj = JSON.parse(content);
                 model.create(obj, function(err, doc) {
                     if (err) {
                         logger.log('error', "An error occurred. " + file + " was not inserted into database.");
                     }
 
                     logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                    self.addToTrackedFiles(file, doc._id);
+                    // self.addToTrackedFiles(file, doc._id);
                 });
             } else {
                 logger.log('error', "Could not insert " + file + " into database.");
@@ -266,6 +270,7 @@ class pspublisher {
     }
 
     addToTrackedFiles(file, id) {
+
         /*  
             This helper function will write into trackedFiles.json a key-value
             pair of the form:
@@ -278,11 +283,13 @@ class pspublisher {
             remove a document from the database, the id must first exist in
             the trackedFiles.json file.
         */
-        const self = this;
-        fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, data) {
+
+        fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, fd) {
             if (err) {
                 console.log(err);
             }
+
+            let data = fs.readFileSync(fd, 'utf8');
             // If trackedFiles.json is not empty then...
             if (data) {
                 let fileObj = JSON.parse(data);
@@ -295,91 +302,49 @@ class pspublisher {
                     perfectly so we don't have to worry about the database.
                 */
 
-                fs.writeFileSync(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(fileObj), 'utf-8', (err) => {
-                    if (err) {
-                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                    }
-                    logger.log('info', "Successfully added " + file + " to tracked files.");
-                    logger.log('info', 'Original tracked files has been updated.');
-                });
+                fs.writeSync(fd, JSON.stringify(trackObject));
+                fs.closeSync(fd);
+                logger.log('info', "Successfully added " + file + " to tracked files.");
+                logger.log('info', 'Original tracked files has been updated.');
             } else {
                 // else do...
                 let trackObject = {};
                 trackObject[file] = id;
 
-                // fs.writeFile(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject),
-                //     function(err) {
-                //         if (err) {
-                //             logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                //         }
-                //     });
-
-                fs.writeFileSync(path.join(__dirname, './lib/trackedFiles.json'), JSON.stringify(trackObject), 'utf-8', (err) => {
-                    if (err) {
-                        logger.log('error', "There was a problem. " + file + " was not added to tracked files.");
-                    }
-                    logger.log('info', "Successfully added " + file + " to tracked files.");
-                    logger.log('info', 'Original tracked files has been updated.');
-                });
+                fs.writeSync(fd, JSON.stringify(trackObject));
+                fs.closeSync(fd);
+                logger.log('info', "Successfully added " + file + " to tracked files.");
+                logger.log('info', 'Original tracked files has been updated.');
             }
         });
     }
-}
 
-/*  
-    ----------------------------------
-        Watcher Helper Functions
-    ----------------------------------
-*/
+    updateFile(file) {
+        const model = mongoose.model(this._models[0]);
+        fs.readFile(file, 'utf8', function(err, content) {
+            if (err) {
+                logger.log('error', "Was not able to update " + file + ".");
+            }
 
-function updateFile(file) {
-    fs.readFile(dir + file, 'utf8', function(err, content) {
-        if (err) {
-            logger.log('error', "Was not able to update " + file + ".");
-        }
-
-        if (!content) {
-            logger.log('error', file + " cannot be empty.");
-        }
-
-        // var model = mongoose.modelNames();
-        console.log(mongoose.modelNames());
-        if (model) {
-            var updatedDoc = JSON.parse(content);
-            fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8',
-                function(err, data) {
-                    var fileObj = JSON.parse(data);
-                    if (fileObj[file]) {
-                        model.findOneAndUpdate({ _id: ObjectId(fileObj[file]) }, updatedDoc,
-                            function(err, doc) {
-                                if (err) {
-                                    logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
-                                }
-
-                                logger.log('info', file + " was successfully updated.");
-                            }
-                        );
-                    } else {
-                        logger.log('error', "Could not find " + file + " in the tracked files.");
+            let updatedDoc = JSON.parse(content);
+            if (model) {
+                model.findOneAndUpdate({ file: file }, updatedDoc, { upsert: true }, (err, doc) => {
+                    if (err) {
+                        logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
                     }
-                }
-            );
-        } else {
-            logger.log('error', "Was not able to update" + file + ".");
-        }
-    });
-}
 
-function removeFile(file) {
-    fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', function(err, content) {
-        if (err) {
-            logger.log('error', "Was not able to read trackedFiles.json.");
-        }
+                    logger.log('info', file + " was successfully updated.");
+                });
+            } else {
+                logger.log('error', "Could not find " + file + " in the tracked files.");
+            }
+        });
+    }
 
-        var model = mongoose.model(modelNames[0]);
+    removeFile(file) {
+        let model = mongoose.model(this._models[0]);
         if (model) {
-            var fileObj = JSON.parse(content);
-            model.remove({ _id: ObjectId(fileObj[file]) }, function(err) {
+            model.remove({ file: file }, function(err) {
                 if (err) {
                     logger.log('error', "Could not find document in collection.");
                 }
@@ -388,18 +353,35 @@ function removeFile(file) {
 
                 // Simply delete the key-value pair and overwrites the 
                 // original file with one less element.
-                delete fileObj[file];
+                // delete fileObj[file];
 
-                if (fileObj) {
-                    removeFromTrackedFiles(file, fileObj);
-                } else {
-                    removeFromTrackedFiles(file, {});
-                }
+                // if (fileObj) {
+                //     removeFromTrackedFiles(file, fileObj);
+                // } else {
+                //     removeFromTrackedFiles(file, {});
+                // }
             });
         } else {
             logger.log('error', "Could not delete " + file + " from database.");
         }
-    });
+    }
+
+    removeFromTrackedFiles(file, obj) {
+        fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w',
+            function(err, fd) {
+                if (err) {
+                    logger.log('error', "There was a problem. Could not" + " write into tracked files.");
+                }
+
+                let writeBuf = new Buffer(JSON.stringify(obj));
+                fs.writeSync(fd, writeBuf, 0, writeBuf.length, 0);
+                logger.log('info', "Successfully removed " + file + " from tracked files.");
+                logger.log('info', 'Original tracked files has been updated.');
+
+                fs.closeSync(fd);
+            }
+        );
+    }
 }
 
 /*  
@@ -428,23 +410,6 @@ function findAndValidateModel(file) {
         });
     });
     logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
-}
-
-function removeFromTrackedFiles(file, obj) {
-    fs.open(path.join(__dirname, './lib/trackedFiles.json'), 'w',
-        function(err, fd) {
-            if (err) {
-                logger.log('error', "There was a problem. Could not" + " write into tracked files.");
-            }
-
-            var writeBuf = new Buffer(JSON.stringify(obj));
-            fs.writeSync(fd, writeBuf, 0, writeBuf.length, 0);
-            logger.log('info', "Successfully removed " + file + " from tracked files.");
-            logger.log('info', 'Original tracked files has been updated.');
-
-            fs.closeSync(fd);
-        }
-    );
 }
 
 /*  
