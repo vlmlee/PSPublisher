@@ -5,7 +5,6 @@ const fs = require('fs'),
     mongoose = require('mongoose'),
     junk = require('junk'),
     path = require('path'),
-    validate = require('json-schema').validate,
     ObjectId = require('mongodb').ObjectID;
 
 /*  
@@ -253,7 +252,7 @@ class pspublisher {
             const schema = model.schema;
             _document["file"] = file;
             if (model) {
-                if (self.validate(_document, schema)) {
+                if (validate(_document, schema)) {
                     model.create(_document, function(err, doc) {
                         if (err) {
                             logger.log('error', "An error occurred. " + file + " was not inserted into database.");
@@ -284,7 +283,7 @@ class pspublisher {
             updatedDoc["file"] = file;
             const schema = model.schema;
             if (model) {
-                if (self.validate(updatedDoc, schema)) {
+                if (validate(updatedDoc, schema)) {
                     model.findOneAndUpdate({ file: file }, updatedDoc, { upsert: true }, (err, doc) => {
                         if (err) {
                             logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
@@ -379,15 +378,6 @@ class pspublisher {
         }
     }
 
-    validate(doc, schema) {
-        for (let i = 0; i < Object.keys(doc).length; i++) {
-            if (Object.keys(doc)[i] !== Object.keys(schema.obj)[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
     exit() {
         process.exit();
     }
@@ -412,6 +402,15 @@ function arrayEquals(arr1, arr2) {
     } else {
         return false;
     }
+}
+
+function validate(doc, schema) {
+    for (let i = 0; i < Object.keys(doc).length; i++) {
+        if (Object.keys(doc)[i] !== Object.keys(schema.obj)[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /*  
