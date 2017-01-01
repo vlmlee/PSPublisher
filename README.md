@@ -29,7 +29,7 @@ pspublisher/
 │   ├── all-logs.log
 │   └── exceptions.log
 └── test/
-    ├── sample.js
+    ├── example.js
     ├── test.js
     └── test.json
 ```
