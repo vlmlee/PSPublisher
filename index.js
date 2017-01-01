@@ -74,8 +74,9 @@ const logger = new winston.Logger({
             name: 'Posts',
             schema: {
                 'title': title,
-                'body': body
-            }
+                'body': body,
+            },
+            collection: 'mycollection'
         }]);
 
     Currently does not have support for subdocuments. 
@@ -152,19 +153,10 @@ class pspublisher {
                     trackedKeys;
                 if (data) {
                     trackedFiles = JSON.parse(data),
-                        trackedKeys = Object.keys(trackedFiles).sort();
+                    trackedKeys = trackedFiles.map(i => path.basename(Object.keys(i)[0])).sort();
                 } else {
                     trackedKeys = [];
                 }
-
-                /*  
-                    trackedFiles[trackedKeys[i]] will give us the ids, if we need them.
-                    We can also do:
-                    Object.keys(trackedFiles).forEach(function (key) {
-                        let value = trackedFiles[key];
-                        logger.log('info', value);
-                    });
-                */
 
                 if (arrayEquals(fileListings, trackedKeys)) {
                     logger.log('info', "Files are in sync. Will be listening for changes.");
@@ -203,6 +195,7 @@ class pspublisher {
             }
             logger.log('info', "Connected to " + uri);
         });
+        return this;
     }
 
     syncFiles(listing, tracked, dir) {
