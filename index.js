@@ -139,8 +139,11 @@ class pspublisher {
                 directory, we will remove the document from the database and then untrack it.
             */
 
+            const model = mongoose.model(self._models[0]);
+
             const Watched = watcher.getWatched();
             let fileListings = Watched[dir].sort();
+            let trackedKeys = [];
 
             // Reconcile the file listings with the record of tracked files. This 
             // will be used to update the database on this script's startup.
@@ -149,17 +152,14 @@ class pspublisher {
                     logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
                 }
 
-                let trackedFiles,
-                    trackedKeys;
+                let trackedFiles;
                 if (data) {
                     trackedFiles = JSON.parse(data),
                     trackedKeys = trackedFiles.map(i => path.basename(Object.keys(i)[0])).sort();
-                } else {
-                    trackedKeys = [];
                 }
 
                 if (arrayEquals(fileListings, trackedKeys)) {
-                    logger.log('info', "Files are in sync. Will be listening for changes.");
+                    logger.log('info', "Files are in sync. Checking database...");
                 } else if (fileListings.length === 0) {
                     logger.log('info', "There are currently no files in " + dir + ".");
                 } else {
@@ -167,6 +167,46 @@ class pspublisher {
                     self.syncFiles(fileListings, trackedKeys, dir);
                 }
             });
+
+            let removeFromDatabase = [],
+                insertToDatabase = [];
+
+            setTimeout(() => {
+                model.find({}, (err, docs) => {
+                    let docFiles = docs.map(doc => doc.file);
+                    // If the number of documents in the database
+                    // is greater than the number being tracked,
+                    // we want to find all documents in the
+                    // collection not being tracked and remove
+                    // them. 
+                    if (docFiles.length > trackedKeys.length) {
+                        removeFromDatabase = docFiles.filter(file => {
+                            // filter out files found in database that
+                            // are being tracked
+                            return (trackedKeys.indexOf(path.basename(file)) !== -1) ? true : false;
+                        });
+                    // If the number of documents in the database
+                    // is less however, we find the files being tracked
+                    // that are missing from the database and add them.
+                    } else if (docFiles.length < trackedKeys.length) {
+                        insertToDatabase = trackedKeys.filter(key => {
+                            // filter out files being tracked that are 
+                            // in database
+                            return (docFiles.indexOf(path.resolve(dir, key)) !== -1) ? false : true;
+                        });
+                    }
+                });
+            }, 500);
+
+            setTimeout(() => {
+                if (removeFromDatabase.length !== 0 || insertToDatabase.length !== 0) {
+                    removeFromDatabase.map(file => self.removeFile(path.resolve(dir, file), 'db'));
+                    insertToDatabase.map(file => self.insertFile(path.resolve(dir, file), 'db'));
+                    logger.log('info', 'Database is syncing.');
+                } else {
+                    logger.log('info', 'Database is synced. Will be listening for changes.')
+                }
+            }, 650);
         });
 
         watcher.on('add', (file) => {
@@ -214,7 +254,7 @@ class pspublisher {
             */
             listing.forEach(file => {
                 if (!(file in tracked)) {
-                    self.insertFile(path.resolve(dir, file), dir);
+                    self.insertFile(path.resolve(dir, file));
                 }
             });
         } else if (listing.length < tracked.length) {
@@ -227,13 +267,13 @@ class pspublisher {
             */
             tracked.forEach(file => {
                 if (!(file in listing)) {
-                    self.removeFile(path.resolve(dir, file), dir);
+                    self.removeFile(path.resolve(dir, file));
                 }
             });
         }
     }
 
-    insertFile(file, dir) {
+    insertFile(file, flag) {
         const model = mongoose.model(this._models[0]);
         const self = this;
         fs.readFile(file, 'utf8', function(err, content) {
@@ -252,8 +292,10 @@ class pspublisher {
                         }
 
                         logger.log('info', file + " was successfully inserted. id: " + doc._id);
-                        self._stack.push({ [file]: doc._id });
-                        self.addToTrackedFiles();
+                        if (flag !== 'db') {
+                            self._stack.push({ [file]: doc._id });
+                            self.addToTrackedFiles();
+                        }
                     });
                 } else {
                     logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
@@ -293,7 +335,7 @@ class pspublisher {
         });
     }
 
-    removeFile(file) {
+    removeFile(file, flag) {
         let model = mongoose.model(this._models[0]);
         const self = this;
         if (model) {
@@ -303,7 +345,9 @@ class pspublisher {
                 }
 
                 logger.log('info', "Successfully removed " + file + " from collection.");
-                self.removeFromTrackedFiles(file);
+                if (flag !== 'db') {
+                    self.removeFromTrackedFiles(file);
+                }
             });
         } else {
             logger.log('error', "Could not delete " + file + " from database.");

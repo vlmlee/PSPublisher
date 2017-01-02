@@ -2,10 +2,6 @@
 
 pspublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
 
-## !!! WARNING !!!
-
-Not yet compatible with ES2016.
-
 ### Installation
 
 You can clone this repo with `git clone https://github.com/vlmlee/pspublisher.git` and then run `npm install` from inside the cloned directory to install the dependencies.
