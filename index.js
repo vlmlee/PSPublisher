@@ -128,7 +128,7 @@ class pspublisher {
         });
 
         watcher.on('ready', () => {
-            logger.log('info', "Began watching " + dir);
+            logger.log('info', "Began watching ./" + path.basename(dir));
 
             /* 
                 Checks and sees what files are currently being watched. Chokidar also
@@ -149,7 +149,7 @@ class pspublisher {
             // will be used to update the database on this script's startup.
             fs.readFile(path.join(__dirname, './lib/trackedFiles.json'), 'utf8', (err, data) => {
                 if (err) {
-                    logger.log('error', "An error occurred with trackedFiles file. Please resolve before continuing.");
+                    logger.log('error', "An error occurred with trackedFiles file. Was not able to read file.");
                 }
 
                 let trackedFiles;
@@ -161,9 +161,9 @@ class pspublisher {
                 if (arrayEquals(fileListings, trackedKeys)) {
                     logger.log('info', "Files are in sync. Checking database...");
                 } else if (fileListings.length === 0) {
-                    logger.log('info', "There are currently no files in " + dir + ".");
+                    logger.log('info', "There are currently no files in ./" + path.basename(dir) + ".");
                 } else {
-                    logger.log('info', "Files in " + dir + " are not in sync.");
+                    logger.log('info', "Files in ./" + path.basename(dir) + " are not in sync.");
                     self.syncFiles(fileListings, trackedKeys, dir);
                 }
             });
@@ -212,17 +212,17 @@ class pspublisher {
         });
 
         watcher.on('add', (file) => {
-            logger.log('info', file + " was added to " + dir + ".");
+            logger.log('info', path.basename(file) + " was added to ./" + path.basename(dir) + ".");
             self.insertFile(file, dir);
         });
 
         watcher.on('change', (file, stats) => {
-            logger.log('info', file + " was modified at " + stats.mtime + ".");
+            logger.log('info', path.basename(file) + " was modified at " + stats.mtime + ".");
             self.updateFile(file, dir);
         });
 
         watcher.on('unlink', (file) => {
-            logger.log('info', file + " was removed from " + dir + ".");
+            logger.log('info', path.basename(file) + " was removed from ./" + path.basename(dir) + ".");
             self.removeFile(file, dir);
         });
     }
@@ -280,7 +280,7 @@ class pspublisher {
         const self = this;
         fs.readFile(file, 'utf8', function(err, content) {
             if (err) {
-                logger.log('error', "Was not able to read the file for some reason.");
+                logger.log('error', "Was not able to read the file.");
             }
 
             let _document = JSON.parse(content);
@@ -290,10 +290,10 @@ class pspublisher {
                 if (validate(_document, schema)) {
                     model.create(_document, function(err, doc) {
                         if (err) {
-                            logger.log('error', "An error occurred. " + file + " was not inserted into database.");
+                            logger.log('error', "An error occurred. " + path.basename(file) + " was not inserted into collection.");
                         }
 
-                        logger.log('info', file + " was successfully inserted. id: " + doc._id);
+                        logger.log('info', path.basename(file) + " was successfully inserted to collection. id: " + doc._id);
                         if (flag !== 'db') {
                             self._stack.push({ [file]: doc._id });
                             self.addToTrackedFiles();
@@ -303,7 +303,7 @@ class pspublisher {
                     logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
                 }
             } else {
-                logger.log('error', "Could not insert " + file + " into database.");
+                logger.log('error', "Could not insert " + path.basename(file) + " into collection.");
             }
         });
     }
@@ -313,7 +313,7 @@ class pspublisher {
         let self = this;
         fs.readFile(file, 'utf8', function(err, content) {
             if (err) {
-                logger.log('error', "Was not able to update " + file + ".");
+                logger.log('error', "Was not able to update " + path.basename(file) + ".");
             }
 
             let updatedDoc = JSON.parse(content);
@@ -323,16 +323,16 @@ class pspublisher {
                 if (validate(updatedDoc, schema)) {
                     model.findOneAndUpdate({ file: file }, updatedDoc, { upsert: true }, (err, doc) => {
                         if (err) {
-                            logger.log('error', "An error occurred. Was not" + " able to update " + file + ".");
+                            logger.log('error', "An error occurred. Was not" + " able to update " + path.basename(file) + ".");
                         }
 
-                        logger.log('info', file + " was successfully updated.");
+                        logger.log('info', path.basename(file) + " was successfully updated.");
                     });
                 } else {
-                    logger.log('error', "File does not have a valid schema." + " Please recheck your document.");
+                    logger.log('error', "File does not have a valid schema. Please recheck your document.");
                 }
             } else {
-                logger.log('error', "Could not find " + file + " in the tracked files.");
+                logger.log('error', "Could not find " + path.basename(file) + " in the tracked files.");
             }
         });
     }
@@ -346,13 +346,13 @@ class pspublisher {
                     logger.log('error', "Could not find document in collection.");
                 }
 
-                logger.log('info', "Successfully removed " + file + " from collection.");
+                logger.log('info', "Successfully removed " + path.basename(file) + " from collection.");
                 if (flag !== 'db') {
                     self.removeFromTrackedFiles(file);
                 }
             });
         } else {
-            logger.log('error', "Could not delete " + file + " from database.");
+            logger.log('error', "Could not delete " + path.basename(file) + " from collection.");
         }
     }
 
@@ -388,7 +388,7 @@ class pspublisher {
             let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+');
             fs.writeSync(fd, JSON.stringify(trackedFilesArr));
             fs.closeSync(fd);
-            logger.log('info', "Successfully added " + file + " to tracked files.");
+            logger.log('info', "Successfully added " + path.basename(file) + " to tracked files.");
             logger.log('info', 'Original tracked files has been updated.');
         } else {
             // If trackedFiles.json is not empty then...
@@ -397,7 +397,7 @@ class pspublisher {
             let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+');
             fs.writeSync(fd, JSON.stringify(trackedFilesArr));
             fs.closeSync(fd);
-            logger.log('info', "Successfully added " + file + " to tracked files.");
+            logger.log('info', "Successfully added " + path.basename(file) + " to tracked files.");
             logger.log('info', 'Original tracked files has been updated.');
         } 
     }
@@ -410,10 +410,10 @@ class pspublisher {
             let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+'); 
             fs.writeSync(fd, JSON.stringify(filterTracked));
             fs.closeSync(fd);
-            logger.log('info', "Successfully removed " + file + " from tracked files.");
+            logger.log('info', "Successfully removed " + path.basename(file) + " from tracked files.");
             logger.log('info', 'Original tracked files has been updated.');
         } else {
-            logger.log('error', "trackedFiles is empty. Could not delete " + file + " from trackedFiles.");
+            logger.log('error', "trackedFiles is empty. Could not delete " + path.basename(file) + " from trackedFiles.");
         }
     }
 
