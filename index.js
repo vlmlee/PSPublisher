@@ -167,35 +167,37 @@ class pspublisher {
                     self.syncFiles(fileListings, trackedKeys, dir);
                 }
             });
-
+                
             let removeFromDatabase = [],
                 insertToDatabase = [];
 
             setTimeout(() => {
-                model.find({}, (err, docs) => {
-                    let docFiles = docs.map(doc => doc.file);
-                    // If the number of documents in the database
-                    // is greater than the number being tracked,
-                    // we want to find all documents in the
-                    // collection not being tracked and remove
-                    // them. 
-                    if (docFiles.length > trackedKeys.length) {
-                        removeFromDatabase = docFiles.filter(file => {
-                            // filter out files found in database that
-                            // are being tracked
-                            return (trackedKeys.indexOf(path.basename(file)) !== -1) ? true : false;
-                        });
-                    // If the number of documents in the database
-                    // is less however, we find the files being tracked
-                    // that are missing from the database and add them.
-                    } else if (docFiles.length < trackedKeys.length) {
-                        insertToDatabase = trackedKeys.filter(key => {
-                            // filter out files being tracked that are 
-                            // in database
-                            return (docFiles.indexOf(path.resolve(dir, key)) !== -1) ? false : true;
-                        });
-                    }
-                });
+                if (trackedKeys.length !== 0) {
+                    model.find({}, (err, docs) => {
+                        let docFiles = docs.map(doc => doc.file);
+                        // If the number of documents in the database
+                        // is greater than the number being tracked,
+                        // we want to find all documents in the
+                        // collection not being tracked and remove
+                        // them. 
+                        if (docFiles.length > trackedKeys.length) {
+                            removeFromDatabase = docFiles.filter(file => {
+                                // filter out files found in database that
+                                // are being tracked
+                                return (trackedKeys.indexOf(path.basename(file)) !== -1) ? true : false;
+                            });
+                        // If the number of documents in the database
+                        // is less however, we find the files being tracked
+                        // that are missing from the database and add them.
+                        } else if (docFiles.length < trackedKeys.length) {
+                            insertToDatabase = trackedKeys.filter(key => {
+                                // filter out files being tracked that are 
+                                // in database
+                                return (docFiles.indexOf(path.resolve(dir, key)) !== -1) ? false : true;
+                            });
+                        }
+                    });
+                }
             }, 500);
 
             setTimeout(() => {
