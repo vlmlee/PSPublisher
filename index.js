@@ -105,7 +105,6 @@ class pspublisher {
 
     start() {
         logger.log('info', "pspublisher is starting...");
-
         const dir = this._directory;
         const self = this;
 
@@ -128,8 +127,7 @@ class pspublisher {
         });
 
         watcher.on('ready', () => {
-            logger.log('info', "Began watching ./" + path.basename(dir));
-
+            logger.log('info', "Began watching " + dir);
             /* 
                 Checks and sees what files are currently being watched. Chokidar also
                 tracks the directory itself so it's necessary to grab the property that 
@@ -138,12 +136,11 @@ class pspublisher {
                 our database when they were first added. When the file is no longer in the 
                 directory, we will remove the document from the database and then untrack it.
             */
-
             const model = mongoose.model(self._models[0]);
-
             const Watched = watcher.getWatched();
             let fileListings = Watched[dir].sort();
-            let trackedKeys = [];
+            let trackedKeys = [],
+                trackedValues = [];
 
             // Reconcile the file listings with the record of tracked files. This 
             // will be used to update the database on this script's startup.
@@ -155,7 +152,14 @@ class pspublisher {
                 let trackedFiles;
                 if (data) {
                     trackedFiles = JSON.parse(data),
-                    trackedKeys = trackedFiles.map(i => path.basename(Object.keys(i)[0])).sort();
+                    trackedKeys = trackedFiles.map(i => path.basename(Object.keys(i)[0])).sort(),
+                    trackedValues = trackedFiles.map(i => {
+                        for (let key in i) {
+                            if (Object.prototype.hasOwnProperty.call(i, key)) {
+                                return i[key];
+                            }
+                        }
+                    }).sort();
                 }
 
                 if (arrayEquals(fileListings, trackedKeys)) {
@@ -174,23 +178,29 @@ class pspublisher {
             setTimeout(() => {
                 if (trackedKeys.length !== 0) {
                     model.find({}, (err, docs) => {
-                        let docFiles = docs.map(doc => doc.file);
-                        // If the number of documents in the database
-                        // is greater than the number being tracked,
-                        // we want to find all documents in the
-                        // collection not being tracked and remove
-                        // them. 
-                        if (docFiles.length > trackedKeys.length) {
-                            removeFromDatabase = docFiles.filter(file => {
+                        let docFiles = docs.map(doc => doc.file),
+                            docIds = docs.map(doc => doc._id.toString());
+                        /* 
+                            If the number of documents in the database
+                            is greater than the number being tracked,
+                            we want to find all documents in the
+                            collection not being tracked and remove
+                            them. 
+                        */
+                        if (docIds.length > trackedValues.length) {
+                            removeFromDatabase = docIds.filter(id => {
+
                                 // filter out files found in database that
                                 // are being tracked
-                                return (trackedKeys.indexOf(path.basename(file)) !== -1) ? true : false;
+                                return (trackedValues.indexOf(id) !== -1) ? false : true;
                             });
+
                         // If the number of documents in the database
                         // is less however, we find the files being tracked
                         // that are missing from the database and add them.
                         } else if (docFiles.length < trackedKeys.length) {
                             insertToDatabase = trackedKeys.filter(key => {
+
                                 // filter out files being tracked that are 
                                 // in database
                                 return (docFiles.indexOf(path.resolve(dir, key)) !== -1) ? false : true;
@@ -202,7 +212,7 @@ class pspublisher {
 
             setTimeout(() => {
                 if (removeFromDatabase.length !== 0 || insertToDatabase.length !== 0) {
-                    removeFromDatabase.map(file => self.removeFile(path.resolve(dir, file), 'db'));
+                    removeFromDatabase.map(id => self.removeFile(id, 'db'));
                     insertToDatabase.map(file => self.insertFile(path.resolve(dir, file), 'db'));
                     logger.log('info', 'Database is syncing.');
                 } else {
@@ -229,12 +239,14 @@ class pspublisher {
 
     connect(uri) {
         mongoose.connect(uri);
+
         // Confirms successful database connection
         mongoose.connection.once('connected', function(err) {
             if (err) {
                 next(err);
                 logger.log('error', "Couldn't connect to " + uri + ".");
             }
+            
             logger.log('info', "Connected to " + uri);
         });
         return this;
@@ -341,16 +353,23 @@ class pspublisher {
         let model = mongoose.model(this._models[0]);
         const self = this;
         if (model) {
-            model.remove({ file: file }, function(err) {
-                if (err) {
-                    logger.log('error', "Could not find document in collection.");
-                }
+            if (flag === 'db') {
+                model.remove({ _id: file }, (err) => {
+                    if (err) {
+                        logger.log('error', "Was not able to remove " + path.basename(file) + " from collection.");
+                    }
+                    logger.log('info', "Successfully removed " + path.basename(file) + " from collection.");
+                });
+            } else {
+                model.remove({ file: file }, (err) => {
+                    if (err) {
+                        logger.log('error', "Could not find document in collection.");
+                    }
 
-                logger.log('info', "Successfully removed " + path.basename(file) + " from collection.");
-                if (flag !== 'db') {
+                    logger.log('info', "Successfully removed " + path.basename(file) + " from collection.");
                     self.removeFromTrackedFiles(file);
-                }
-            });
+                });
+            }
         } else {
             logger.log('error', "Could not delete " + path.basename(file) + " from collection.");
         }
@@ -358,7 +377,6 @@ class pspublisher {
 
     addToTrackedFiles() {
         const self = this;
-
         /*  
             This helper function will write into trackedFiles.json a key-value
             pair of the form:
@@ -371,20 +389,17 @@ class pspublisher {
             remove a document from the database, the id must first exist in
             the trackedFiles.json file.
         */
-
         let data = fs.readFileSync(path.join(__dirname, './lib/trackedFiles.json'), 'utf8');
 
         if (data) {
             let trackedFilesArr = JSON.parse(data);
             trackedFilesArr.push(self._stack.pop());
-
             /* 
                 trackedFiles.json must be opened synchronously or else we 
                 have the problem of one I/O operation overwriting one 
                 another. Mongoose, however, handles asynchrously operations
                 perfectly so we don't have to worry about the database.
             */
-
             let fd = fs.openSync(path.join(__dirname, './lib/trackedFiles.json'), 'w+');
             fs.writeSync(fd, JSON.stringify(trackedFilesArr));
             fs.closeSync(fd);
