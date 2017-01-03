@@ -190,8 +190,12 @@ class pspublisher {
                         if (docIds.length > trackedValues.length) {
                             removeFromDatabase = docIds.filter(id => {
 
-                                // filter out files found in database that
-                                // are being tracked
+                                /* 
+                                    if the document is found in the database but
+                                    is not being tracked, insert the found documents
+                                    into an array that will remove them from the
+                                    collection.
+                                */
                                 return (trackedValues.indexOf(id) !== -1) ? false : true;
                             });
 
@@ -201,8 +205,9 @@ class pspublisher {
                         } else if (docFiles.length < trackedKeys.length) {
                             insertToDatabase = trackedKeys.filter(key => {
 
-                                // filter out files being tracked that are 
-                                // in database
+                                // if the document in the collection is found within 
+                                // the tracked files then make sure it is ignored, else
+                                // insert it to the array that will add it to the collection
                                 return (docFiles.indexOf(path.resolve(dir, key)) !== -1) ? false : true;
                             });
                         }
