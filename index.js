@@ -140,7 +140,11 @@ class pspublisher {
                 Watched = watcher.getWatched();
             let fileListings = [];
 
+<<<<<<< HEAD
             if (Watched.length !== 0) {
+=======
+            if (Watched) {
+>>>>>>> 36fc611c7ea55ef244ce2e72888f1373ec998712
                 fileListings = Watched[dir].sort();
             }
 
