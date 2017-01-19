@@ -44,7 +44,7 @@ pspublisher is built on top of [chokidar][2] and [mongoose][3]. Both are mature 
 To use it, require it like:
 
 ```js
-const publisher = require('pspublisher');
+const publisher = require('pspublisher').pspublisher;
 ```
 
 and then define a path or directory that you want to watch. We also tell it what database to send our documents.
@@ -58,16 +58,18 @@ publisher.connect('mongodb://localhost/myapp');
 publisher('/path/to/directory').connect('mongodb://localhost/myapp');
 ```
 
-After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. pspublisher currently has no support for subdocuments. 
+After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with three fields: name, schema, and collection. You can define the schema to be anything you like, as long as your documents match that schema. pspublisher currently has no support for subdocuments. 
 
 ```js
+// Example
 publisher.models([{
 	name: 'Posts',
 	schema: {
-		title: String,
+		name: String,
 		body: String,
 		url: String
-	}
+	},
+	collection: 'name-of-collection' // comments, for instance
 }]);
 ```
 
@@ -91,14 +93,9 @@ To have the script automatically exit when an exception is thrown, you will want
 publisher.logger({exitOnError: true});
 ```
 
-
 ### Protect trackedFiles.json
 
 Don't modify this file.
-
-### Tests
-
-Coming soon.
 
 ### Further Work
 

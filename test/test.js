@@ -5,21 +5,21 @@ const expect = require('chai').expect,
     assert = require('assert'),
     MongoClient = require('mongodb').MongoClient;
 
-const path = require('path'),
-    directory = path.join(__dirname, 'test-directory'),
-    model = [{
-        "name": "Test",
-        "schema": {
-            "test": String,
-            "content": String,
-            "file": String,
-        },
-        "collection": "testdb"
-    }],
-    publish = new pspublisher(directory, model); 
+// const path = require('path'),
+//     directory = path.join(__dirname, 'test-directory'),
+//     model = [{
+//         "name": "Test",
+//         "schema": {
+//             "test": String,
+//             "content": String,
+//             "file": String,
+//         },
+//         "collection": "testdb"
+//     }],
+//     publish = new pspublisher(directory, model); 
 
-publish.connect('mongodb://localhost/app').start();
-publish.start();
+// publish.connect('mongodb://localhost/app').start();
+// publish.start();
 
 describe('Pspublisher tests', function() {
     describe('trackedFiles at start', () => {
