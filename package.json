@@ -9,6 +9,7 @@
   },
   "main": "index.js",
   "scripts": {
+    "pretest": "mongod",
     "test": "mocha test/test.js"
   },
   "keywords": [
