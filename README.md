@@ -1,5 +1,7 @@
 # Pretty Simple Publisher
 
+[![Build Status](https://travis-ci.org/vlmlee/pspublisher.svg?branch=master)](https://travis-ci.org/vlmlee/pspublisher)
+
 pspublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
 
 ### Installation
