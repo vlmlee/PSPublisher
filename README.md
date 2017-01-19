@@ -2,19 +2,17 @@
 
 [![Build Status](https://travis-ci.org/vlmlee/pspublisher.svg?branch=master)](https://travis-ci.org/vlmlee/pspublisher)
 
-pspublisher is a module for automatic, asynchronous CRUD operations on a Mongo database. 
+pspublisher is a package for automatic, asynchronous CRUD operations on a Mongo database. 
 
 ### Installation
 
 You can clone this repo with `git clone https://github.com/vlmlee/pspublisher.git` and then run `npm install` from inside the cloned directory to install the dependencies.
 
-Later, you will be able to install this module by running:
+or you can install this package via npm:
 
 ```bash
 npm install pspublisher
 ```
-
-This will be after I finish the testing suite for it.
 
 ## Overview 
 
@@ -27,9 +25,10 @@ pspublisher/
 │   ├── all-logs.log
 │   └── exceptions.log
 └── test/
+	├── test-directory
+	├── loading-directory
     ├── example.js
-    ├── test.js
-    └── test.json
+    └── test.js
 ```
 
 ### Motivation
@@ -42,27 +41,21 @@ So why not automate the process? And so we did.
 
 pspublisher is built on top of [chokidar][2] and [mongoose][3]. Both are mature and robust modules that made this project possible. Both are built with asynchronicity in mind.
 
-For now, we will want to use pspublisher like this if it's in the same path:
+To use it, require it like:
 
 ```js
-var publisher = require('./index');
+const publisher = require('pspublisher');
 ```
 
-Later, we'll be able to require it just like any other node module.
+and then define a path or directory that you want to watch. We also tell it what database to send our documents.
 
 ```js
-var publisher = require('pspublisher');
-```
-
-To use it, we define a path or directory that we want it to watch. We then also tell it what database to send our documents to.
-
-```js
-publisher(path);
+publisher('/path/to/directory');
 publisher.connect('mongodb://localhost/myapp');
 
 // or chained:
 
-publisher(path).connect('mongodb://localhost/myapp');
+publisher('/path/to/directory').connect('mongodb://localhost/myapp');
 ```
 
 After doing so, we can define a model to structure our documents. With this module, we want to create a model by using an array with two fields: name and schema. You can define the schema to be anything you like, as long as your documents match that schema. pspublisher currently has no support for subdocuments. 

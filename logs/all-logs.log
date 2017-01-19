@@ -1,3 +1,20 @@
 {"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T17:06:25.238Z"}
 {"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T17:06:25.242Z"}
 {"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2017-01-19T17:06:25.321Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:29:01.004Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:29:01.008Z"}
+{"level":"info","message":"Connected to mongodb://localhost/app","timestamp":"2017-01-19T18:29:01.073Z"}
+{"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2017-01-19T18:29:01.100Z"}
+{"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2017-01-19T18:29:01.101Z"}
+{"level":"info","message":"There are currently no files in ./test-directory.","timestamp":"2017-01-19T18:29:01.103Z"}
+{"level":"info","message":"There are currently no files in ./test-directory.","timestamp":"2017-01-19T18:29:01.103Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:30:23.469Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:30:23.472Z"}
+{"level":"info","message":"Connected to mongodb://localhost/app","timestamp":"2017-01-19T18:30:23.529Z"}
+{"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2017-01-19T18:30:23.545Z"}
+{"level":"info","message":"Began watching /Users/Sicueft/Desktop/Projects/PSPublisher/test/test-directory","timestamp":"2017-01-19T18:30:23.546Z"}
+{"level":"info","message":"There are currently no files in ./test-directory.","timestamp":"2017-01-19T18:30:23.548Z"}
+{"level":"info","message":"There are currently no files in ./test-directory.","timestamp":"2017-01-19T18:30:23.549Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:31:40.096Z"}
+{"level":"info","message":"pspublisher is starting...","timestamp":"2017-01-19T18:31:40.100Z"}
+{"level":"info","message":"Connected to mongodb://localhost/app","timestamp":"2017-01-19T18:31:40.151Z"}
