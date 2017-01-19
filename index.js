@@ -136,9 +136,14 @@ class pspublisher {
                 our database when they were first added. When the file is no longer in the 
                 directory, we will remove the document from the database and then untrack it.
             */
-            const model = mongoose.model(self._models[0]);
-            const Watched = watcher.getWatched();
-            let fileListings = Watched[dir].sort();
+            const model = mongoose.model(self._models[0]),
+                Watched = watcher.getWatched();
+            let fileListings = [];
+
+            if (Watched) {
+                fileListings = Watched[dir].sort();
+            }
+
             let trackedKeys = [],
                 trackedValues = [];
 
