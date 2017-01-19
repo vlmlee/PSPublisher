@@ -1,50 +1,44 @@
 'use strict';
-var expect = require('chai').expect,
-    fs = require('fs-extra'),
+const expect = require('chai').expect,
+    fs = require('fs'),
     pspublisher = require('../index').pspublisher,
     assert = require('assert'),
     MongoClient = require('mongodb').MongoClient;
 
-var publish = new pspublisher('./testDir'),
-    url = 'mongodb://localhost:27017/blog';
+const path = require('path'),
+    directory = path.join(__dirname, 'test-directory'),
+    model = [{
+        "name": "Test",
+        "schema": {
+            "test": String,
+            "sample": String,
+            "file": String,
+        },
+        "collection": "testdb"
+    }],
+    publish = new pspublisher(directory, model); 
 
-publish.connect(url);
-
-publish.models([{
-    "name": "Test",
-    "schema": {
-        "title": String,
-        "content": String
-    }
-}]);
+publish.connect('mongodb://localhost/app').start();
 
 publish.start();
 
-// describe('Array', function() {
-//   describe('#indexOf()', function() {
-//     it('should return -1 when the value is not present', function() {
-//       assert.equal(-1, [1,2,3].indexOf(4));
-//     });
-//   });
-// });
+describe('pspublisher', function() {
+    describe('trackedFiles at start', () => {
+        it('should be empty before the script starts', () => {
+            fs.readFile('../lib/trackedFiles.json', function(data) {
+                expect(data).to.be.empty;
+            });
+        });
+    });
 
-// describe('pspublisher', function() {
-
-//     // describe('trackedFiles at start', () => {
-//     //     it('should be empty before the script starts', () => {
-//     //         fs.readFile('../lib/trackedFiles.json', function(data) {
-//     //             expect(data).to.be.empty;
-//     //         });
-//     //     });
-//     // });
-
-//     // describe('log file start', () => {
-//     //     it('should be empty', () => {
-//     //         fs.readFile('../logs/all-logs.log', (data) => {
-//     //             expect(data).to.be.empty;
-//     //         });
-//     //     });
-//     // });
+    describe('log file start', () => {
+        it('should be empty', () => {
+            fs.readFile('../logs/all-logs.log', (data) => {
+                expect(data).to.be.empty;
+            });
+        });
+    });
+});
 
 //     describe('Database', function() {
 //         it('should show that two new records were inserted into the database after two files were created in the directory', function() {
